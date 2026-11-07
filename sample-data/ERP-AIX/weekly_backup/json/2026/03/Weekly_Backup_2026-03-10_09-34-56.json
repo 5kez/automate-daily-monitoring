@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-03-10_09-34-56",
+  "log_type": "BACKUP_LOG_PARSED",
+  "parsed_data": {
+    "system": {
+      "hostname": "aix-erp-01",
+      "log_source": "/BACKD2D/rman_prod_backup/backup_history"
+    },
+    "backup_summary": {
+      "start_time": "Mon Mar  9 18:00:00 THAIST 2026",
+      "end_time": "Mon Mar  9 18:29:44 THAIST 2026",
+      "status": "SUCCESS"
+    }
+  },
+  "raw_stdout": "(raw command output removed from the public sample)"
+}

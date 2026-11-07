@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-03-11_09-20-03",
+  "raw_stdout": "(raw command output removed from the public sample)",
+  "parsed_df": [
+    {
+      "filesystem": "/dev/mapper/vg_docsprod-LogVol02",
+      "size": "32G",
+      "used": "8.1G",
+      "avail": "22G",
+      "use_percent": "28%",
+      "mount": "/"
+    },
+    {
+      "filesystem": "tmpfs",
+      "size": "2.0G",
+      "used": "76K",
+      "avail": "2.0G",
+      "use_percent": "1%",
+      "mount": "/dev/shm"
+    },
+    {
+      "filesystem": "/dev/mapper/vg_docsprod-LogVol01",
+      "size": "355G",
+      "used": "289G",
+      "avail": "48G",
+      "use_percent": "86%",
+      "mount": "/alfresco"
+    },
+    {
+      "filesystem": "/dev/sda1",
+      "size": "485M",
+      "used": "38M",
+      "avail": "423M",
+      "use_percent": "9%",
+      "mount": "/boot"
+    },
+    {
+      "filesystem": "/dev/mapper/vg_docsprod-LogVol00",
+      "size": "4.0G",
+      "used": "722M",
+      "avail": "3.1G",
+      "use_percent": "19%",
+      "mount": "/home"
+    }
+  ]
+}

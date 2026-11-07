@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-03-10_09-34-39",
+  "Loggaps": [
+    {
+      "Loggap_name": "CDBPROD",
+      "summary": {
+        "time_lag": "+00:10:36",
+        "transfer_gap": 0,
+        "apply_gap": 1,
+        "source_sequence": 214905,
+        "last_archived": 214904,
+        "source_scn": "7278290753793",
+        "source_time": "2026-03-10:06:40:02 +07:00",
+        "destination_scn": "7278290744004",
+        "destination_time": "2026-03-10:06:29:26 +07:00",
+        "last_transferred_ts": "2026-03-10 06:40:05",
+        "next_required_seq": 214904,
+        "completion_time": "Tue Mar 10 06:40:07 2026"
+      }
+    }
+  ],
+  "raw_stdout": "(raw command output removed from the public sample)"
+}

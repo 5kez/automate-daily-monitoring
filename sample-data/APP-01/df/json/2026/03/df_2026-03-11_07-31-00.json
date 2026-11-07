@@ -1,0 +1,94 @@
+{
+  "timestamp": "2026-03-11_07-31-00",
+  "raw_stdout": "(raw command output removed from the public sample)",
+  "parsed_df": [
+    {
+      "filesystem": "devtmpfs",
+      "size": "16G",
+      "used": "0",
+      "avail": "16G",
+      "use_percent": "0%",
+      "mount": "/dev"
+    },
+    {
+      "filesystem": "tmpfs",
+      "size": "16G",
+      "used": "430M",
+      "avail": "16G",
+      "use_percent": "3%",
+      "mount": "/dev/shm"
+    },
+    {
+      "filesystem": "tmpfs",
+      "size": "16G",
+      "used": "58M",
+      "avail": "16G",
+      "use_percent": "1%",
+      "mount": "/run"
+    },
+    {
+      "filesystem": "tmpfs",
+      "size": "16G",
+      "used": "0",
+      "avail": "16G",
+      "use_percent": "0%",
+      "mount": "/sys/fs/cgroup"
+    },
+    {
+      "filesystem": "/dev/mapper/ol-root",
+      "size": "83G",
+      "used": "5.3G",
+      "avail": "78G",
+      "use_percent": "7%",
+      "mount": "/"
+    },
+    {
+      "filesystem": "/dev/mapper/ol-arch",
+      "size": "100G",
+      "used": "33M",
+      "avail": "100G",
+      "use_percent": "1%",
+      "mount": "/arch"
+    },
+    {
+      "filesystem": "/dev/mapper/ol-ERPP",
+      "size": "700G",
+      "used": "363G",
+      "avail": "337G",
+      "use_percent": "52%",
+      "mount": "/ERPP"
+    },
+    {
+      "filesystem": "/dev/mapper/ol--stage-lv_data",
+      "size": "296G",
+      "used": "113G",
+      "avail": "168G",
+      "use_percent": "41%",
+      "mount": "/stage"
+    },
+    {
+      "filesystem": "/dev/sda1",
+      "size": "485M",
+      "used": "226M",
+      "avail": "260M",
+      "use_percent": "47%",
+      "mount": "/boot"
+    },
+    {
+      "filesystem": "tmpfs",
+      "size": "3.2G",
+      "used": "40K",
+      "avail": "3.2G",
+      "use_percent": "1%",
+      "mount": "/run/user/0"
+    },
+    {
+      "filesystem": "tmpfs",
+      "size": "3.2G",
+      "used": "0",
+      "avail": "3.2G",
+      "use_percent": "0%",
+      "mount": "/run/user/54321"
+    }
+  ]
+}

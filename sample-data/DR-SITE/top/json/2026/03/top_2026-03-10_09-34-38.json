@@ -1,0 +1,198 @@
+{
+  "timestamp": "2026-03-10_09-34-38",
+  "log_type": "AIX_MONITORING",
+  "parsed_data": {
+    "system": {
+      "hostname": "aix-erp-01",
+      "timestamp": "09:30:39 10-03-2026"
+    },
+    "cpu_lpar": {
+      "physc": "1.14",
+      "entc": "28.5",
+      "user_pct": "9.3",
+      "kern_pct": "7.8",
+      "wait_pct": "0.8",
+      "idle_pct": "82.2"
+    },
+    "memory": {
+      "total_mb": "49152",
+      "free_ram_mb": "400",
+      "free_pct": "0.8"
+    },
+    "paging": {
+      "size_mb": "16384",
+      "used_pct": "1%",
+      "faults": "2404601777"
+    },
+    "disks": [
+      {
+        "device": "cd2",
+        "busy_pct": "0.0%",
+        "kbps": "0.0"
+      },
+      {
+        "device": "cd1",
+        "busy_pct": "0.0%",
+        "kbps": "0.0"
+      },
+      {
+        "device": "cd0",
+        "busy_pct": "0.0%",
+        "kbps": "0.0"
+      },
+      {
+        "device": "hdisk1",
+        "busy_pct": "75.0%",
+        "kbps": "8944.0"
+      },
+      {
+        "device": "hdisk0",
+        "busy_pct": "2.0%",
+        "kbps": "424.0"
+      }
+    ],
+    "processes": [
+      {
+        "pid": "27001312",
+        "cpu_pct": "0.4",
+        "size_mb": "35.1",
+        "owner": "oraprod",
+        "command": "oracle"
+      },
+      {
+        "pid": "65929568",
+        "cpu_pct": "0.0",
+        "size_mb": "2.3",
+        "owner": "oraprod",
+        "command": "dbvagent"
+      },
+      {
+        "pid": "65077698",
+        "cpu_pct": "0.0",
+        "size_mb": "82.9",
+        "owner": "oraprod",
+        "command": "dbvnet"
+      },
+      {
+        "pid": "64750062",
+        "cpu_pct": "0.0",
+        "size_mb": "0.2",
+        "owner": "root",
+        "command": "sort"
+      },
+      {
+        "pid": "61866474",
+        "cpu_pct": "0.0",
+        "size_mb": "16.6",
+        "owner": "oraprod",
+        "command": "oracle"
+      },
+      {
+        "pid": "59638064",
+        "cpu_pct": "0.0",
+        "size_mb": "15.4",
+        "owner": "oraprod",
+        "command": "oracle"
+      },
+      {
+        "pid": "57475434",
+        "cpu_pct": "0.0",
+        "size_mb": "1599.8",
+        "owner": "oraprod",
+        "command": "rman"
+      },
+      {
+        "pid": "56033676",
+        "cpu_pct": "0.0",
+        "size_mb": "2.0",
+        "owner": "root",
+        "command": "ps"
+      },
+      {
+        "pid": "52756948",
+        "cpu_pct": "0.0",
+        "size_mb": "12.2",
+        "owner": "oraprod",
+        "command": "oracle"
+      },
+      {
+        "pid": "52429070",
+        "cpu_pct": "0.0",
+        "size_mb": "12.4",
+        "owner": "oraprod",
+        "command": "oracle"
+      },
+      {
+        "pid": "51053050",
+        "cpu_pct": "0.0",
+        "size_mb": "1.1",
+        "owner": "root",
+        "command": "screen-4.7.0_64"
+      },
+      {
+        "pid": "50659658",
+        "cpu_pct": "0.0",
+        "size_mb": "12.2",
+        "owner": "oraprod",
+        "command": "oracle"
+      },
+      {
+        "pid": "50397478",
+        "cpu_pct": "0.0",
+        "size_mb": "35.0",
+        "owner": "oraprod",
+        "command": "oracle"
+      },
+      {
+        "pid": "50069978",
+        "cpu_pct": "0.0",
+        "size_mb": "12.2",
+        "owner": "oraprod",
+        "command": "oracle"
+      },
+      {
+        "pid": "46662012",
+        "cpu_pct": "0.0",
+        "size_mb": "12.2",
+        "owner": "oraprod",
+        "command": "oracle"
+      },
+      {
+        "pid": "46399906",
+        "cpu_pct": "0.0",
+        "size_mb": "0.2",
+        "owner": "root",
+        "command": "head"
+      },
+      {
+        "pid": "45351396",
+        "cpu_pct": "0.0",
+        "size_mb": "1.1",
+        "owner": "root",
+        "command": "topas_nmon"
+      },
+      {
+        "pid": "43843942",
+        "cpu_pct": "0.0",
+        "size_mb": "34.4",
+        "owner": "oraprod",
+        "command": "oracle"
+      },
+      {
+        "pid": "41550192",
+        "cpu_pct": "0.0",
+        "size_mb": "15.9",
+        "owner": "oraprod",
+        "command": "oracle"
+      },
+      {
+        "pid": "41025892",
+        "cpu_pct": "0.0",
+        "size_mb": "34.4",
+        "owner": "oraprod",
+        "command": "oracle"
+      }
+    ]
+  },
+  "raw_stdout": "(raw command output removed from the public sample)"
+}

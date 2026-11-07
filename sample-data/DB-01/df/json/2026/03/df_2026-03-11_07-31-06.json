@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-03-11_07-31-06",
+  "raw_stdout": "(raw command output removed from the public sample)",
+  "parsed_df": [
+    {
+      "filesystem": "/dev/mapper/vg_db01-LogVol03",
+      "size": "12G",
+      "used": "7.5G",
+      "avail": "3.2G",
+      "use_percent": "71%",
+      "mount": "/"
+    },
+    {
+      "filesystem": "tmpfs",
+      "size": "5.9G",
+      "used": "72K",
+      "avail": "5.9G",
+      "use_percent": "1%",
+      "mount": "/dev/shm"
+    },
+    {
+      "filesystem": "/dev/sda1",
+      "size": "477M",
+      "used": "79M",
+      "avail": "369M",
+      "use_percent": "18%",
+      "mount": "/boot"
+    },
+    {
+      "filesystem": "/dev/mapper/vg_db01-LogVol01",
+      "size": "9.8G",
+      "used": "7.1G",
+      "avail": "2.2G",
+      "use_percent": "77%",
+      "mount": "/home"
+    },
+    {
+      "filesystem": "/dev/mapper/vg_db01-LogVol02",
+      "size": "99G",
+      "used": "42G",
+      "avail": "53G",
+      "use_percent": "45%",
+      "mount": "/u01"
+    }
+  ]
+}

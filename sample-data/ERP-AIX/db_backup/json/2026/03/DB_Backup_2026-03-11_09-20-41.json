@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-03-11_09-20-41",
+  "log_type": "DATABASE_TAPE_BACKUP_LOG",
+  "parsed_data": {
+    "system": {
+      "hostname": "aix-erp-01",
+      "operation": "ORACLE_DB_TAPE_BACKUP"
+    },
+    "backup_summary": {
+      "start_time": "Wed Mar 11 01:30:00 THAIST 2026",
+      "end_time": "Wed Mar 11 01:31:59 THAIST 2026",
+      "status": "INCOMPLETE"
+    }
+  },
+  "raw_stdout": "(raw command output removed from the public sample)"
+}

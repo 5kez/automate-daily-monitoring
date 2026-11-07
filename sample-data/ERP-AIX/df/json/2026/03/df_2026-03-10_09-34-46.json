@@ -1,0 +1,150 @@
+{
+  "timestamp": "2026-03-10_09-34-46",
+  "raw_stdout": "(raw command output removed from the public sample)",
+  "parsed_df": [
+    {
+      "filesystem": "/dev/hd4",
+      "size": "1.00",
+      "used": "0.11",
+      "avail": "0.89",
+      "use_percent": "12%",
+      "mount": "/"
+    },
+    {
+      "filesystem": "/dev/hd2",
+      "size": "8.88",
+      "used": "4.17",
+      "avail": "4.71",
+      "use_percent": "47%",
+      "mount": "/usr"
+    },
+    {
+      "filesystem": "/dev/hd9var",
+      "size": "2.38",
+      "used": "0.75",
+      "avail": "1.62",
+      "use_percent": "32%",
+      "mount": "/var"
+    },
+    {
+      "filesystem": "/dev/hd3",
+      "size": "6.12",
+      "used": "2.20",
+      "avail": "3.93",
+      "use_percent": "36%",
+      "mount": "/tmp"
+    },
+    {
+      "filesystem": "/dev/hd1",
+      "size": "0.12",
+      "used": "0.10",
+      "avail": "0.02",
+      "use_percent": "81%",
+      "mount": "/home"
+    },
+    {
+      "filesystem": "/proc",
+      "size": "-",
+      "used": "-",
+      "avail": "-",
+      "use_percent": "-",
+      "mount": "/proc"
+    },
+    {
+      "filesystem": "/dev/hd10opt",
+      "size": "0.75",
+      "used": "0.62",
+      "avail": "0.13",
+      "use_percent": "84%",
+      "mount": "/opt"
+    },
+    {
+      "filesystem": "/dev/fslv00",
+      "size": "5.00",
+      "used": "2.14",
+      "avail": "2.86",
+      "use_percent": "43%",
+      "mount": "/r11/usr"
+    },
+    {
+      "filesystem": "/dev/fslv01",
+      "size": "677.00",
+      "used": "637.12",
+      "avail": "39.88",
+      "use_percent": "95%",
+      "mount": "/usr/erp"
+    },
+    {
+      "filesystem": "/dev/fslv02",
+      "size": "4.00",
+      "used": "3.05",
+      "avail": "0.95",
+      "use_percent": "77%",
+      "mount": "/ora10g"
+    },
+    {
+      "filesystem": "/dev/fslv03",
+      "size": "15.00",
+      "used": "7.41",
+      "avail": "7.59",
+      "use_percent": "50%",
+      "mount": "/ERP-AIX/oraerp/erpdb/10.2.0"
+    },
+    {
+      "filesystem": "/dev/fslv04",
+      "size": "50.00",
+      "used": "41.15",
+      "avail": "8.85",
+      "use_percent": "83%",
+      "mount": "/ERP-AIX/applerp"
+    },
+    {
+      "filesystem": "/dev/fslv05",
+      "size": "45.00",
+      "used": "0.48",
+      "avail": "44.52",
+      "use_percent": "2%",
+      "mount": "/usr/ERP-AIX/arch"
+    },
+    {
+      "filesystem": "/dev/fslv06",
+      "size": "5.00",
+      "used": "3.29",
+      "avail": "1.71",
+      "use_percent": "66%",
+      "mount": "/sysstat"
+    },
+    {
+      "filesystem": "/dev/fslv07",
+      "size": "60.00",
+      "used": "40.91",
+      "avail": "19.09",
+      "use_percent": "69%",
+      "mount": "/reorg"
+    },
+    {
+      "filesystem": "/dev/fslv08",
+      "size": "50.00",
+      "used": "42.96",
+      "avail": "7.04",
+      "use_percent": "86%",
+      "mount": "/backup"
+    },
+    {
+      "filesystem": "/dev/fslv09",
+      "size": "1.00",
+      "used": "0.15",
+      "avail": "0.85",
+      "use_percent": "16%",
+      "mount": "/usr/ERP-AIX/db"
+    },
+    {
+      "filesystem": "/dev/fslv10",
+      "size": "811.00",
+      "used": "669.89",
+      "avail": "141.11",
+      "use_percent": "83%",
+      "mount": "/BACKD2D"
+    }
+  ]
+}

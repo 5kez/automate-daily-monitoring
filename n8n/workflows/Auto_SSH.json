@@ -1,0 +1,4426 @@
+{
+  "name": "Auto SSH",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// ----------------------\n// รับ stdout จาก Execute Command\n// ----------------------\nlet stdout = $input.first().json.stdout || \"\";\n\n// ----------------------\n// แปลง literal \"\\n\" -> newline จริง\n// ----------------------\nstdout = stdout.replace(/\\\\n/g, \"\\n\");\n\n// ----------------------\n// timestamp แบบธรรมดา: 2025-12-08_14-25-43\n// ----------------------\nconst now = new Date();\nconst ts =\n  now.getFullYear() + \"-\" +\n  String(now.getMonth() + 1).padStart(2, '0') + \"-\" +\n  String(now.getDate()).padStart(2, '0') + \"_\" +\n  String(now.getHours()).padStart(2, '0') + \"-\" +\n  String(now.getMinutes()).padStart(2, '0') + \"-\" +\n  String(now.getSeconds()).padStart(2, '0');\n\n\n// ----------------------\n// ฟังก์ชัน parse top\n// ----------------------\nfunction parseTopRaw(stdout) {\n  const lines = stdout.split(\"\\n\").map(l => l.trim()).filter(Boolean);\n\n  const result = {\n    system: {},\n    tasks: {},\n    cpu: {},\n    memory: {},\n    swap: {},\n    processes: []\n  };\n\n  // ----------------------\n  // System line\n  // ----------------------\n  const sysLine = lines.find(l => l.startsWith(\"top -\"));\n  if (sysLine) {\n    const match = sysLine.match(\n      /top - ([0-9:]+) up (.*?),\\s+(\\d+) users?,\\s+load average:\\s*([0-9.,]+),\\s*([0-9.,]+),\\s*([0-9.,]+)/\n    );\n    if (match) {\n      result.system = {\n        time: match[1],\n        uptime: match[2],\n        users: Number(match[3]),\n        loadavg: {\n          \"1min\": match[4],\n          \"5min\": match[5],\n          \"15min\": match[6]\n        }\n      };\n    }\n  }\n\n  // ----------------------\n  // Tasks line\n  // ----------------------\n  const tasksLine = lines.find(l => l.startsWith(\"Tasks:\"));\n  if (tasksLine) {\n    const match = tasksLine.match(\n      /Tasks:\\s+(\\d+) total,\\s+(\\d+) running,\\s+(\\d+) sleeping,\\s+(\\d+) stopped,\\s+(\\d+) zombie/\n    );\n    if (match) {\n      result.tasks = {\n        total: Number(match[1]),\n        running: Number(match[2]),\n        sleeping: Number(match[3]),\n        stopped: Number(match[4]),\n        zombie: Number(match[5])\n      };\n    }\n  }\n\n  // ----------------------\n  // CPU line\n  // ----------------------\n  const cpuLine = lines.find(l => l.startsWith(\"Cpu\"));\n  if (cpuLine) {\n    const parts = cpuLine.match(\n      /([\\d.]+)%us.*?([\\d.]+)%sy.*?([\\d.]+)%ni.*?([\\d.]+)%id.*?([\\d.]+)%wa.*?([\\d.]+)%hi.*?([\\d.]+)%si.*?([\\d.]+)%st/\n    );\n    if (parts) {\n      result.cpu = {\n        user: Number(parts[1]),\n        system: Number(parts[2]),\n        nice: Number(parts[3]),\n        idle: Number(parts[4]),\n        wait: Number(parts[5]),\n        hardware_irq: Number(parts[6]),\n        software_irq: Number(parts[7]),\n        steal: Number(parts[8])\n      };\n    }\n  }\n\n  // ----------------------\n  // Memory line\n  // ----------------------\n  const memLine = lines.find(l => l.startsWith(\"Mem:\"));\n  if (memLine) {\n    const parts = memLine.match(\n      /Mem:\\s+(\\d+)k total,\\s+(\\d+)k used,\\s+(\\d+)k free,\\s+(\\d+)k buffers/\n    );\n    if (parts) {\n      result.memory = {\n        total_kb: Number(parts[1]),\n        used_kb: Number(parts[2]),\n        free_kb: Number(parts[3]),\n        buffers_kb: Number(parts[4])\n      };\n    }\n  }\n\n  // ----------------------\n  // Swap line\n  // ----------------------\n  const swapLine = lines.find(l => l.startsWith(\"Swap:\"));\n  if (swapLine) {\n    const parts = swapLine.match(\n      /Swap:\\s+(\\d+)k total,\\s+(\\d+)k used,\\s+(\\d+)k free,\\s+(\\d+)k cached/\n    );\n    if (parts) {\n      result.swap = {\n        total_kb: Number(parts[1]),\n        used_kb: Number(parts[2]),\n        free_kb: Number(parts[3]),\n        cached_kb: Number(parts[4])\n      };\n    }\n  }\n\n  // ----------------------\n  // Process list\n  // ----------------------\n  const headerIndex = lines.findIndex(l => l.startsWith(\"PID \"));\n  if (headerIndex !== -1) {\n    const procLines = lines.slice(headerIndex + 1);\n\n    for (const line of procLines) {\n      const cols = line.split(/\\s+/);\n      if (cols.length < 12) continue;\n\n      result.processes.push({\n        pid: cols[0],\n        user: cols[1],\n        pr: cols[2],\n        ni: cols[3],\n        virt: cols[4],\n        res: cols[5],\n        shr: cols[6],\n        state: cols[7],\n        cpu: cols[8],\n        mem: cols[9],\n        time: cols[10],\n        command: cols.slice(11).join(\" \")\n      });\n    }\n  }\n\n  return result;\n}\n\n\n// ----------------------\n// Parse top using stdoutFixed\n// ----------------------\nconst parsed = parseTopRaw(stdout);\n\n// ----------------------\n// ส่งออก RAW + JSON\n// ----------------------\nreturn [\n  {\n    json: {\n      timestamp: ts,\n      raw_stdout: stdout,   // แบบหลายบรรทัดจริง\n      parsed_top: parsed\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        2448
+      ],
+      "id": "3f482acd-7e9e-44c2-9053-dedaedfa5362",
+      "name": "Format top",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "=raw_stdout",
+        "options": {
+          "fileName": "=top_{{$json.timestamp}}.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        2304
+      ],
+      "id": "5b5fdc04-1e7e-4b9c-8029-eadb6d7052cb",
+      "name": "Convert to text",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true,
+          "fileName": "=top_{{$json.timestamp}}.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        2592
+      ],
+      "id": "d4b8c7af-4e68-47d2-ac54-b004c3721a9e",
+      "name": "Convert to json",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/DB-01/top/json/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        2592
+      ],
+      "id": "f7579022-8a14-4a9b-bd22-d6c9f4d25413",
+      "name": "Save Json"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/DB-01/top/raw/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        2304
+      ],
+      "id": "80482fdd-e5db-4bcf-9319-fd30eb39c3cf",
+      "name": "Save Text"
+    },
+    {
+      "parameters": {
+        "jsCode": "// รับ stdout จาก Execute Command\nconst stdout = $input.first().json.stdout || \"\";\n\n// timestamp สำหรับชื่อไฟล์\nconst now = new Date();\nconst ts =\n  now.getFullYear() + \"-\" +\n  String(now.getMonth() + 1).padStart(2, '0') + \"-\" +\n  String(now.getDate()).padStart(2, '0') + \"_\" +\n  String(now.getHours()).padStart(2, '0') + \"-\" +\n  String(now.getMinutes()).padStart(2, '0') + \"-\" +\n  String(now.getSeconds()).padStart(2, '0');\n\n// --------------------------------------------------\n// ฟังก์ชัน parse df -h\n// --------------------------------------------------\nfunction parseDfH(text) {\n  const lines = text.split(\"\\n\").map(l => l.trim()).filter(Boolean);\n\n  // ตัด header: \"Filesystem Size Used Avail Use% Mounted on\"\n  const dataLines = lines.slice(1);\n\n  const result = [];\n\n  let currentFs = null;\n\n  for (const line of dataLines) {\n    const parts = line.split(/\\s+/);\n\n    // กรณีบรรทัด FILESYSTEM แต่ไม่มีข้อมูลอื่น (split เป็น 1 ช่อง)\n    // เช่น \"/dev/mapper/vg_satien-lv_root\"\n    if (parts.length === 1 && parts[0].startsWith(\"/\")) {\n      currentFs = { filesystem: parts[0] };\n      continue;\n    }\n\n    // ถ้าบรรทัดข้อมูลต่อจาก FS\n    if (currentFs && parts.length >= 5) {\n      currentFs.size = parts[0];\n      currentFs.used = parts[1];\n      currentFs.avail = parts[2];\n      currentFs.use_percent = parts[3];\n      currentFs.mount = parts[4];\n      result.push(currentFs);\n      currentFs = null;\n      continue;\n    }\n\n    // บรรทัดปกติในรูปแบบเดียว เช่น\n    // tmpfs  32G  68K  32G  1% /dev/shm\n    if (parts.length >= 6) {\n      result.push({\n        filesystem: parts[0],\n        size: parts[1],\n        used: parts[2],\n        avail: parts[3],\n        use_percent: parts[4],\n        mount: parts[5]\n      });\n    }\n  }\n\n  return result;\n}\n\n// แปลง stdout → JSON\nconst parsed = parseDfH(stdout);\n\n// --------------------------------------------------\n// ส่งออก RAW + JSON + timestamp\n// --------------------------------------------------\nreturn [\n  {\n    json: {\n      timestamp: ts,\n      raw_stdout: stdout,   // ← RAW เก็บตรงนี้\n      parsed_df: parsed     // ← JSON structured\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        3024
+      ],
+      "id": "3547d088-ccf6-4c23-a9dc-003bb3f8bae9",
+      "name": "Format df -h",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "=raw_stdout",
+        "options": {
+          "fileName": "=df_{{$json.timestamp}}.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        2880
+      ],
+      "id": "8e850bc0-5b0a-4ff6-b5cd-32066ca5047b",
+      "name": "Convert to text1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true,
+          "fileName": "=df_{{$json.timestamp}}.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        3168
+      ],
+      "id": "6885ff32-7853-4f4a-8289-d8a162eef9f8",
+      "name": "Convert to json1",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/DB-01/df/raw/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        2880
+      ],
+      "id": "5a08b950-0821-4ad1-ad92-b882d070c659",
+      "name": "Save Text1"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/DB-01/df/json/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        3168
+      ],
+      "id": "3eef270e-d064-430e-94cf-8c881cb3c672",
+      "name": "Save Json1"
+    },
+    {
+      "parameters": {
+        "content": "DB-01",
+        "height": 80,
+        "width": 150,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1008,
+        1808
+      ],
+      "typeVersion": 1,
+      "id": "b0343fef-b858-431d-b3d4-d038f0a727da",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ----------------------\n// รับ stdout จาก Execute Command\n// ----------------------\nlet stdout = $input.first().json.stdout || \"\";\n\n// ----------------------\n// แปลง literal \"\\n\" -> newline จริง\n// ----------------------\nstdout = stdout.replace(/\\\\n/g, \"\\n\");\n\n// ----------------------\n// timestamp แบบธรรมดา: 2025-12-08_14-25-43\n// ----------------------\nconst now = new Date();\nconst ts =\n  now.getFullYear() + \"-\" +\n  String(now.getMonth() + 1).padStart(2, '0') + \"-\" +\n  String(now.getDate()).padStart(2, '0') + \"_\" +\n  String(now.getHours()).padStart(2, '0') + \"-\" +\n  String(now.getMinutes()).padStart(2, '0') + \"-\" +\n  String(now.getSeconds()).padStart(2, '0');\n\n\n// ----------------------\n// ฟังก์ชัน parse top\n// ----------------------\nfunction parseTopRaw(stdout) {\n  const lines = stdout.split(\"\\n\").map(l => l.trim()).filter(Boolean);\n\n  const result = {\n    system: {},\n    tasks: {},\n    cpu: {},\n    memory: {},\n    swap: {},\n    processes: []\n  };\n\n  // ----------------------\n  // System line\n  // ----------------------\n  const sysLine = lines.find(l => l.startsWith(\"top -\"));\n  if (sysLine) {\n    const match = sysLine.match(\n      /top - ([0-9:]+) up (.*?),\\s+(\\d+) users?,\\s+load average:\\s*([0-9.,]+),\\s*([0-9.,]+),\\s*([0-9.,]+)/\n    );\n    if (match) {\n      result.system = {\n        time: match[1],\n        uptime: match[2],\n        users: Number(match[3]),\n        loadavg: {\n          \"1min\": match[4],\n          \"5min\": match[5],\n          \"15min\": match[6]\n        }\n      };\n    }\n  }\n\n  // ----------------------\n  // Tasks line\n  // ----------------------\n  const tasksLine = lines.find(l => l.startsWith(\"Tasks:\"));\n  if (tasksLine) {\n    const match = tasksLine.match(\n      /Tasks:\\s+(\\d+) total,\\s+(\\d+) running,\\s+(\\d+) sleeping,\\s+(\\d+) stopped,\\s+(\\d+) zombie/\n    );\n    if (match) {\n      result.tasks = {\n        total: Number(match[1]),\n        running: Number(match[2]),\n        sleeping: Number(match[3]),\n        stopped: Number(match[4]),\n        zombie: Number(match[5])\n      };\n    }\n  }\n\n  // ----------------------\n  // CPU line\n  // ----------------------\n  const cpuLine = lines.find(l => l.startsWith(\"Cpu\"));\n  if (cpuLine) {\n    const parts = cpuLine.match(\n      /([\\d.]+)%us.*?([\\d.]+)%sy.*?([\\d.]+)%ni.*?([\\d.]+)%id.*?([\\d.]+)%wa.*?([\\d.]+)%hi.*?([\\d.]+)%si.*?([\\d.]+)%st/\n    );\n    if (parts) {\n      result.cpu = {\n        user: Number(parts[1]),\n        system: Number(parts[2]),\n        nice: Number(parts[3]),\n        idle: Number(parts[4]),\n        wait: Number(parts[5]),\n        hardware_irq: Number(parts[6]),\n        software_irq: Number(parts[7]),\n        steal: Number(parts[8])\n      };\n    }\n  }\n\n  // ----------------------\n  // Memory line\n  // ----------------------\n  const memLine = lines.find(l => l.startsWith(\"Mem:\"));\n  if (memLine) {\n    const parts = memLine.match(\n      /Mem:\\s+(\\d+)k total,\\s+(\\d+)k used,\\s+(\\d+)k free,\\s+(\\d+)k buffers/\n    );\n    if (parts) {\n      result.memory = {\n        total_kb: Number(parts[1]),\n        used_kb: Number(parts[2]),\n        free_kb: Number(parts[3]),\n        buffers_kb: Number(parts[4])\n      };\n    }\n  }\n\n  // ----------------------\n  // Swap line\n  // ----------------------\n  const swapLine = lines.find(l => l.startsWith(\"Swap:\"));\n  if (swapLine) {\n    const parts = swapLine.match(\n      /Swap:\\s+(\\d+)k total,\\s+(\\d+)k used,\\s+(\\d+)k free,\\s+(\\d+)k cached/\n    );\n    if (parts) {\n      result.swap = {\n        total_kb: Number(parts[1]),\n        used_kb: Number(parts[2]),\n        free_kb: Number(parts[3]),\n        cached_kb: Number(parts[4])\n      };\n    }\n  }\n\n  // ----------------------\n  // Process list\n  // ----------------------\n  const headerIndex = lines.findIndex(l => l.startsWith(\"PID \"));\n  if (headerIndex !== -1) {\n    const procLines = lines.slice(headerIndex + 1);\n\n    for (const line of procLines) {\n      const cols = line.split(/\\s+/);\n      if (cols.length < 12) continue;\n\n      result.processes.push({\n        pid: cols[0],\n        user: cols[1],\n        pr: cols[2],\n        ni: cols[3],\n        virt: cols[4],\n        res: cols[5],\n        shr: cols[6],\n        state: cols[7],\n        cpu: cols[8],\n        mem: cols[9],\n        time: cols[10],\n        command: cols.slice(11).join(\" \")\n      });\n    }\n  }\n\n  return result;\n}\n\n\n// ----------------------\n// Parse top using stdoutFixed\n// ----------------------\nconst parsed = parseTopRaw(stdout);\n\n// ----------------------\n// ส่งออก RAW + JSON\n// ----------------------\nreturn [\n  {\n    json: {\n      timestamp: ts,\n      raw_stdout: stdout,   // แบบหลายบรรทัดจริง\n      parsed_top: parsed\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        3600
+      ],
+      "id": "1627440c-d72d-4983-bdf4-37859a4cf366",
+      "name": "Format top1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "=raw_stdout",
+        "options": {
+          "fileName": "=top_{{$json.timestamp}}.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        3456
+      ],
+      "id": "15c11d2d-d2a7-496e-987c-6aad7b4c34aa",
+      "name": "Convert to text2",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true,
+          "fileName": "=top_{{$json.timestamp}}.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        3744
+      ],
+      "id": "65821868-510c-404f-9b5b-ad80c18a7c22",
+      "name": "Convert to json2",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/DOCS-01/top/json/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        3744
+      ],
+      "id": "1bcb1144-e776-414b-9f62-965105770f6e",
+      "name": "Save Json2"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/DOCS-01/top/raw/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        3456
+      ],
+      "id": "04d0461a-549f-441d-9156-c59c61188cc5",
+      "name": "Save Text2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// รับ stdout จาก Execute Command\nconst stdout = $input.first().json.stdout || \"\";\n\n// timestamp สำหรับชื่อไฟล์\nconst now = new Date();\nconst ts =\n  now.getFullYear() + \"-\" +\n  String(now.getMonth() + 1).padStart(2, '0') + \"-\" +\n  String(now.getDate()).padStart(2, '0') + \"_\" +\n  String(now.getHours()).padStart(2, '0') + \"-\" +\n  String(now.getMinutes()).padStart(2, '0') + \"-\" +\n  String(now.getSeconds()).padStart(2, '0');\n\n// --------------------------------------------------\n// ฟังก์ชัน parse df -h\n// --------------------------------------------------\nfunction parseDfH(text) {\n  const lines = text.split(\"\\n\").map(l => l.trim()).filter(Boolean);\n\n  // ตัด header: \"Filesystem Size Used Avail Use% Mounted on\"\n  const dataLines = lines.slice(1);\n\n  const result = [];\n\n  let currentFs = null;\n\n  for (const line of dataLines) {\n    const parts = line.split(/\\s+/);\n\n    // กรณีบรรทัด FILESYSTEM แต่ไม่มีข้อมูลอื่น (split เป็น 1 ช่อง)\n    // เช่น \"/dev/mapper/vg_satien-lv_root\"\n    if (parts.length === 1 && parts[0].startsWith(\"/\")) {\n      currentFs = { filesystem: parts[0] };\n      continue;\n    }\n\n    // ถ้าบรรทัดข้อมูลต่อจาก FS\n    if (currentFs && parts.length >= 5) {\n      currentFs.size = parts[0];\n      currentFs.used = parts[1];\n      currentFs.avail = parts[2];\n      currentFs.use_percent = parts[3];\n      currentFs.mount = parts[4];\n      result.push(currentFs);\n      currentFs = null;\n      continue;\n    }\n\n    // บรรทัดปกติในรูปแบบเดียว เช่น\n    // tmpfs  32G  68K  32G  1% /dev/shm\n    if (parts.length >= 6) {\n      result.push({\n        filesystem: parts[0],\n        size: parts[1],\n        used: parts[2],\n        avail: parts[3],\n        use_percent: parts[4],\n        mount: parts[5]\n      });\n    }\n  }\n\n  return result;\n}\n\n// แปลง stdout → JSON\nconst parsed = parseDfH(stdout);\n\n// --------------------------------------------------\n// ส่งออก RAW + JSON + timestamp\n// --------------------------------------------------\nreturn [\n  {\n    json: {\n      timestamp: ts,\n      raw_stdout: stdout,   // ← RAW เก็บตรงนี้\n      parsed_df: parsed     // ← JSON structured\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        4176
+      ],
+      "id": "859d1913-61da-4cca-8c23-578d6d60be77",
+      "name": "Format df -h1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "=raw_stdout",
+        "options": {
+          "fileName": "=df_{{$json.timestamp}}.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        4032
+      ],
+      "id": "f6bda7ef-1431-4ee6-8237-4a6cb6339038",
+      "name": "Convert to text3",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true,
+          "fileName": "=df_{{$json.timestamp}}.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        4320
+      ],
+      "id": "28b96ce4-26aa-4755-bba0-f2bd4601dc72",
+      "name": "Convert to json3",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/DOCS-01/df/raw/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        4032
+      ],
+      "id": "47a548ca-f4e1-4ea1-a90e-a584fbea5933",
+      "name": "Save Text3"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/DOCS-01/df/json/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        4320
+      ],
+      "id": "0f11555e-f6eb-4ccc-9727-865540494f79",
+      "name": "Save Json3"
+    },
+    {
+      "parameters": {
+        "content": "DOCS-01\n",
+        "height": 80,
+        "width": 150,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -944,
+        2848
+      ],
+      "typeVersion": 1,
+      "id": "bb837966-68dd-4c84-816a-100b845a2a16",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ----------------------\n// รับ stdout จาก Execute Command\n// ----------------------\nlet stdout = $input.first().json.stdout || \"\";\n\n// ----------------------\n// แปลง literal \"\\n\" -> newline จริง\n// ----------------------\nstdout = stdout.replace(/\\\\n/g, \"\\n\");\n\n// ----------------------\n// timestamp แบบธรรมดา: 2025-12-08_14-25-43\n// ----------------------\nconst now = new Date();\nconst ts =\n  now.getFullYear() + \"-\" +\n  String(now.getMonth() + 1).padStart(2, '0') + \"-\" +\n  String(now.getDate()).padStart(2, '0') + \"_\" +\n  String(now.getHours()).padStart(2, '0') + \"-\" +\n  String(now.getMinutes()).padStart(2, '0') + \"-\" +\n  String(now.getSeconds()).padStart(2, '0');\n\n\n// ----------------------\n// ฟังก์ชัน parse top\n// ----------------------\nfunction parseTopRaw(stdout) {\n  const lines = stdout.split(\"\\n\").map(l => l.trim()).filter(Boolean);\n\n  const result = {\n    system: {},\n    tasks: {},\n    cpu: {},\n    memory: {},\n    swap: {},\n    processes: []\n  };\n\n  // ----------------------\n  // System line\n  // ----------------------\n  const sysLine = lines.find(l => l.startsWith(\"top -\"));\n  if (sysLine) {\n    const match = sysLine.match(\n      /top - ([0-9:]+) up (.*?),\\s+(\\d+) users?,\\s+load average:\\s*([0-9.,]+),\\s*([0-9.,]+),\\s*([0-9.,]+)/\n    );\n    if (match) {\n      result.system = {\n        time: match[1],\n        uptime: match[2],\n        users: Number(match[3]),\n        loadavg: {\n          \"1min\": match[4],\n          \"5min\": match[5],\n          \"15min\": match[6]\n        }\n      };\n    }\n  }\n\n  // ----------------------\n  // Tasks line\n  // ----------------------\n  const tasksLine = lines.find(l => l.startsWith(\"Tasks:\"));\n  if (tasksLine) {\n    const match = tasksLine.match(\n      /Tasks:\\s+(\\d+) total,\\s+(\\d+) running,\\s+(\\d+) sleeping,\\s+(\\d+) stopped,\\s+(\\d+) zombie/\n    );\n    if (match) {\n      result.tasks = {\n        total: Number(match[1]),\n        running: Number(match[2]),\n        sleeping: Number(match[3]),\n        stopped: Number(match[4]),\n        zombie: Number(match[5])\n      };\n    }\n  }\n\n  // ----------------------\n  // CPU line\n  // ----------------------\n  const cpuLine = lines.find(l => l.startsWith(\"Cpu\"));\n  if (cpuLine) {\n    const parts = cpuLine.match(\n      /([\\d.]+)%us.*?([\\d.]+)%sy.*?([\\d.]+)%ni.*?([\\d.]+)%id.*?([\\d.]+)%wa.*?([\\d.]+)%hi.*?([\\d.]+)%si.*?([\\d.]+)%st/\n    );\n    if (parts) {\n      result.cpu = {\n        user: Number(parts[1]),\n        system: Number(parts[2]),\n        nice: Number(parts[3]),\n        idle: Number(parts[4]),\n        wait: Number(parts[5]),\n        hardware_irq: Number(parts[6]),\n        software_irq: Number(parts[7]),\n        steal: Number(parts[8])\n      };\n    }\n  }\n\n  // ----------------------\n  // Memory line\n  // ----------------------\n  const memLine = lines.find(l => l.startsWith(\"Mem:\"));\n  if (memLine) {\n    const parts = memLine.match(\n      /Mem:\\s+(\\d+)k total,\\s+(\\d+)k used,\\s+(\\d+)k free,\\s+(\\d+)k buffers/\n    );\n    if (parts) {\n      result.memory = {\n        total_kb: Number(parts[1]),\n        used_kb: Number(parts[2]),\n        free_kb: Number(parts[3]),\n        buffers_kb: Number(parts[4])\n      };\n    }\n  }\n\n  // ----------------------\n  // Swap line\n  // ----------------------\n  const swapLine = lines.find(l => l.startsWith(\"Swap:\"));\n  if (swapLine) {\n    const parts = swapLine.match(\n      /Swap:\\s+(\\d+)k total,\\s+(\\d+)k used,\\s+(\\d+)k free,\\s+(\\d+)k cached/\n    );\n    if (parts) {\n      result.swap = {\n        total_kb: Number(parts[1]),\n        used_kb: Number(parts[2]),\n        free_kb: Number(parts[3]),\n        cached_kb: Number(parts[4])\n      };\n    }\n  }\n\n  // ----------------------\n  // Process list\n  // ----------------------\n  const headerIndex = lines.findIndex(l => l.startsWith(\"PID \"));\n  if (headerIndex !== -1) {\n    const procLines = lines.slice(headerIndex + 1);\n\n    for (const line of procLines) {\n      const cols = line.split(/\\s+/);\n      if (cols.length < 12) continue;\n\n      result.processes.push({\n        pid: cols[0],\n        user: cols[1],\n        pr: cols[2],\n        ni: cols[3],\n        virt: cols[4],\n        res: cols[5],\n        shr: cols[6],\n        state: cols[7],\n        cpu: cols[8],\n        mem: cols[9],\n        time: cols[10],\n        command: cols.slice(11).join(\" \")\n      });\n    }\n  }\n\n  return result;\n}\n\n\n// ----------------------\n// Parse top using stdoutFixed\n// ----------------------\nconst parsed = parseTopRaw(stdout);\n\n// ----------------------\n// ส่งออก RAW + JSON\n// ----------------------\nreturn [\n  {\n    json: {\n      timestamp: ts,\n      raw_stdout: stdout,   // แบบหลายบรรทัดจริง\n      parsed_top: parsed\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        4752
+      ],
+      "id": "6f9ebb94-4ffa-4197-b9d7-2aa5ae2b017c",
+      "name": "Format top2",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "=raw_stdout",
+        "options": {
+          "fileName": "=top_{{$json.timestamp}}.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        4608
+      ],
+      "id": "94459f79-b320-46ae-b319-b6fd59c38bf6",
+      "name": "Convert to text4",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true,
+          "fileName": "=top_{{$json.timestamp}}.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        4896
+      ],
+      "id": "d5952747-1ca9-4c71-83fd-aa3d4fb158a4",
+      "name": "Convert to json4",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/HELPDESK-01/top/json/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        4896
+      ],
+      "id": "ec2513ff-4c78-4f49-b49c-ba5a9ec9db50",
+      "name": "Save Json4"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/HELPDESK-01/top/raw/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        4608
+      ],
+      "id": "e156c96b-f4f0-4633-90e0-aa7368881807",
+      "name": "Save Text4"
+    },
+    {
+      "parameters": {
+        "jsCode": "// รับ stdout จาก Execute Command\nconst stdout = $input.first().json.stdout || \"\";\n\n// timestamp สำหรับชื่อไฟล์\nconst now = new Date();\nconst ts =\n  now.getFullYear() + \"-\" +\n  String(now.getMonth() + 1).padStart(2, '0') + \"-\" +\n  String(now.getDate()).padStart(2, '0') + \"_\" +\n  String(now.getHours()).padStart(2, '0') + \"-\" +\n  String(now.getMinutes()).padStart(2, '0') + \"-\" +\n  String(now.getSeconds()).padStart(2, '0');\n\n// --------------------------------------------------\n// ฟังก์ชัน parse df -h\n// --------------------------------------------------\nfunction parseDfH(text) {\n  const lines = text.split(\"\\n\").map(l => l.trim()).filter(Boolean);\n\n  // ตัด header: \"Filesystem Size Used Avail Use% Mounted on\"\n  const dataLines = lines.slice(1);\n\n  const result = [];\n\n  let currentFs = null;\n\n  for (const line of dataLines) {\n    const parts = line.split(/\\s+/);\n\n    // กรณีบรรทัด FILESYSTEM แต่ไม่มีข้อมูลอื่น (split เป็น 1 ช่อง)\n    // เช่น \"/dev/mapper/vg_satien-lv_root\"\n    if (parts.length === 1 && parts[0].startsWith(\"/\")) {\n      currentFs = { filesystem: parts[0] };\n      continue;\n    }\n\n    // ถ้าบรรทัดข้อมูลต่อจาก FS\n    if (currentFs && parts.length >= 5) {\n      currentFs.size = parts[0];\n      currentFs.used = parts[1];\n      currentFs.avail = parts[2];\n      currentFs.use_percent = parts[3];\n      currentFs.mount = parts[4];\n      result.push(currentFs);\n      currentFs = null;\n      continue;\n    }\n\n    // บรรทัดปกติในรูปแบบเดียว เช่น\n    // tmpfs  32G  68K  32G  1% /dev/shm\n    if (parts.length >= 6) {\n      result.push({\n        filesystem: parts[0],\n        size: parts[1],\n        used: parts[2],\n        avail: parts[3],\n        use_percent: parts[4],\n        mount: parts[5]\n      });\n    }\n  }\n\n  return result;\n}\n\n// แปลง stdout → JSON\nconst parsed = parseDfH(stdout);\n\n// --------------------------------------------------\n// ส่งออก RAW + JSON + timestamp\n// --------------------------------------------------\nreturn [\n  {\n    json: {\n      timestamp: ts,\n      raw_stdout: stdout,   // ← RAW เก็บตรงนี้\n      parsed_df: parsed     // ← JSON structured\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        5328
+      ],
+      "id": "9e752556-c9a8-42ca-a092-21892c330157",
+      "name": "Format df -h2",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "=raw_stdout",
+        "options": {
+          "fileName": "=df_{{$json.timestamp}}.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        5184
+      ],
+      "id": "459403a5-d48a-404c-9140-f614b892ef33",
+      "name": "Convert to text5",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true,
+          "fileName": "=df_{{$json.timestamp}}.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        5472
+      ],
+      "id": "77028c70-aeb5-4046-9ab6-7f16486bc91e",
+      "name": "Convert to json5",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/HELPDESK-01/df/raw/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        5184
+      ],
+      "id": "2d5c0aff-6159-4941-9725-c5653951e74f",
+      "name": "Save Text5"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/HELPDESK-01/df/json/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        5472
+      ],
+      "id": "f508f5d4-1754-4471-b970-4ac74312af0a",
+      "name": "Save Json5"
+    },
+    {
+      "parameters": {
+        "content": "HELPDESK-01",
+        "height": 80,
+        "width": 150,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -960,
+        3632
+      ],
+      "typeVersion": 1,
+      "id": "1c0dfa46-2178-4d6a-92d5-cf9063c45b41",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ----------------------\n// รับ stdout จาก Execute Command\n// ----------------------\nlet stdout = $input.first().json.stdout || \"\";\n\n// ----------------------\n// แปลง literal \"\\n\" -> newline จริง\n// ----------------------\nstdout = stdout.replace(/\\\\n/g, \"\\n\");\n\n// ----------------------\n// timestamp แบบธรรมดา: 2025-12-08_14-25-43\n// ----------------------\nconst now = new Date();\nconst ts =\n  now.getFullYear() + \"-\" +\n  String(now.getMonth() + 1).padStart(2, '0') + \"-\" +\n  String(now.getDate()).padStart(2, '0') + \"_\" +\n  String(now.getHours()).padStart(2, '0') + \"-\" +\n  String(now.getMinutes()).padStart(2, '0') + \"-\" +\n  String(now.getSeconds()).padStart(2, '0');\n\n\n// ----------------------\n// ฟังก์ชัน parse top\n// ----------------------\nfunction parseTopRaw(stdout) {\n  const lines = stdout.split(\"\\n\").map(l => l.trim()).filter(Boolean);\n\n  const result = {\n    system: {},\n    tasks: {},\n    cpu: {},\n    memory: {},\n    swap: {},\n    processes: []\n  };\n\n  // ----------------------\n  // System line\n  // ----------------------\n  const sysLine = lines.find(l => l.startsWith(\"top -\"));\n  if (sysLine) {\n    const match = sysLine.match(\n      /top - ([0-9:]+) up (.*?),\\s+(\\d+) users?,\\s+load average:\\s*([0-9.,]+),\\s*([0-9.,]+),\\s*([0-9.,]+)/\n    );\n    if (match) {\n      result.system = {\n        time: match[1],\n        uptime: match[2],\n        users: Number(match[3]),\n        loadavg: {\n          \"1min\": match[4],\n          \"5min\": match[5],\n          \"15min\": match[6]\n        }\n      };\n    }\n  }\n\n  // ----------------------\n  // Tasks line\n  // ----------------------\n  const tasksLine = lines.find(l => l.startsWith(\"Tasks:\"));\n  if (tasksLine) {\n    const match = tasksLine.match(\n      /Tasks:\\s+(\\d+) total,\\s+(\\d+) running,\\s+(\\d+) sleeping,\\s+(\\d+) stopped,\\s+(\\d+) zombie/\n    );\n    if (match) {\n      result.tasks = {\n        total: Number(match[1]),\n        running: Number(match[2]),\n        sleeping: Number(match[3]),\n        stopped: Number(match[4]),\n        zombie: Number(match[5])\n      };\n    }\n  }\n\n  // ----------------------\n  // CPU line\n  // ----------------------\n  const cpuLine = lines.find(l => l.startsWith(\"Cpu\"));\n  if (cpuLine) {\n    const parts = cpuLine.match(\n      /([\\d.]+)%us.*?([\\d.]+)%sy.*?([\\d.]+)%ni.*?([\\d.]+)%id.*?([\\d.]+)%wa.*?([\\d.]+)%hi.*?([\\d.]+)%si.*?([\\d.]+)%st/\n    );\n    if (parts) {\n      result.cpu = {\n        user: Number(parts[1]),\n        system: Number(parts[2]),\n        nice: Number(parts[3]),\n        idle: Number(parts[4]),\n        wait: Number(parts[5]),\n        hardware_irq: Number(parts[6]),\n        software_irq: Number(parts[7]),\n        steal: Number(parts[8])\n      };\n    }\n  }\n\n  // ----------------------\n  // Memory line\n  // ----------------------\n  const memLine = lines.find(l => l.startsWith(\"Mem:\"));\n  if (memLine) {\n    const parts = memLine.match(\n      /Mem:\\s+(\\d+)k total,\\s+(\\d+)k used,\\s+(\\d+)k free,\\s+(\\d+)k buffers/\n    );\n    if (parts) {\n      result.memory = {\n        total_kb: Number(parts[1]),\n        used_kb: Number(parts[2]),\n        free_kb: Number(parts[3]),\n        buffers_kb: Number(parts[4])\n      };\n    }\n  }\n\n  // ----------------------\n  // Swap line\n  // ----------------------\n  const swapLine = lines.find(l => l.startsWith(\"Swap:\"));\n  if (swapLine) {\n    const parts = swapLine.match(\n      /Swap:\\s+(\\d+)k total,\\s+(\\d+)k used,\\s+(\\d+)k free,\\s+(\\d+)k cached/\n    );\n    if (parts) {\n      result.swap = {\n        total_kb: Number(parts[1]),\n        used_kb: Number(parts[2]),\n        free_kb: Number(parts[3]),\n        cached_kb: Number(parts[4])\n      };\n    }\n  }\n\n  // ----------------------\n  // Process list\n  // ----------------------\n  const headerIndex = lines.findIndex(l => l.startsWith(\"PID \"));\n  if (headerIndex !== -1) {\n    const procLines = lines.slice(headerIndex + 1);\n\n    for (const line of procLines) {\n      const cols = line.split(/\\s+/);\n      if (cols.length < 12) continue;\n\n      result.processes.push({\n        pid: cols[0],\n        user: cols[1],\n        pr: cols[2],\n        ni: cols[3],\n        virt: cols[4],\n        res: cols[5],\n        shr: cols[6],\n        state: cols[7],\n        cpu: cols[8],\n        mem: cols[9],\n        time: cols[10],\n        command: cols.slice(11).join(\" \")\n      });\n    }\n  }\n\n  return result;\n}\n\n\n// ----------------------\n// Parse top using stdoutFixed\n// ----------------------\nconst parsed = parseTopRaw(stdout);\n\n// ----------------------\n// ส่งออก RAW + JSON\n// ----------------------\nreturn [\n  {\n    json: {\n      timestamp: ts,\n      raw_stdout: stdout,   // แบบหลายบรรทัดจริง\n      parsed_top: parsed\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        5904
+      ],
+      "id": "69f4f696-12e6-481e-a4f8-80367b019b7b",
+      "name": "Format top3",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "=raw_stdout",
+        "options": {
+          "fileName": "=top_{{$json.timestamp}}.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        5760
+      ],
+      "id": "d0301858-d0c0-4e11-83c1-81e846732f1f",
+      "name": "Convert to text6",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true,
+          "fileName": "=top_{{$json.timestamp}}.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        6048
+      ],
+      "id": "42dfa10d-f06c-48fe-8401-ecf9b4e5363e",
+      "name": "Convert to json6",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/HELPDESK-02/top/json/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        6048
+      ],
+      "id": "7e3c5ad3-3c98-4810-9351-852ccf5229af",
+      "name": "Save Json6"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/HELPDESK-02/top/raw/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        5760
+      ],
+      "id": "586c21de-b062-4f00-9256-ca2bc799eadb",
+      "name": "Save Text6"
+    },
+    {
+      "parameters": {
+        "jsCode": "// รับ stdout จาก Execute Command\nconst stdout = $input.first().json.stdout || \"\";\n\n// timestamp สำหรับชื่อไฟล์\nconst now = new Date();\nconst ts =\n  now.getFullYear() + \"-\" +\n  String(now.getMonth() + 1).padStart(2, '0') + \"-\" +\n  String(now.getDate()).padStart(2, '0') + \"_\" +\n  String(now.getHours()).padStart(2, '0') + \"-\" +\n  String(now.getMinutes()).padStart(2, '0') + \"-\" +\n  String(now.getSeconds()).padStart(2, '0');\n\n// --------------------------------------------------\n// ฟังก์ชัน parse df -h\n// --------------------------------------------------\nfunction parseDfH(text) {\n  const lines = text.split(\"\\n\").map(l => l.trim()).filter(Boolean);\n\n  // ตัด header: \"Filesystem Size Used Avail Use% Mounted on\"\n  const dataLines = lines.slice(1);\n\n  const result = [];\n\n  let currentFs = null;\n\n  for (const line of dataLines) {\n    const parts = line.split(/\\s+/);\n\n    // กรณีบรรทัด FILESYSTEM แต่ไม่มีข้อมูลอื่น (split เป็น 1 ช่อง)\n    // เช่น \"/dev/mapper/vg_satien-lv_root\"\n    if (parts.length === 1 && parts[0].startsWith(\"/\")) {\n      currentFs = { filesystem: parts[0] };\n      continue;\n    }\n\n    // ถ้าบรรทัดข้อมูลต่อจาก FS\n    if (currentFs && parts.length >= 5) {\n      currentFs.size = parts[0];\n      currentFs.used = parts[1];\n      currentFs.avail = parts[2];\n      currentFs.use_percent = parts[3];\n      currentFs.mount = parts[4];\n      result.push(currentFs);\n      currentFs = null;\n      continue;\n    }\n\n    // บรรทัดปกติในรูปแบบเดียว เช่น\n    // tmpfs  32G  68K  32G  1% /dev/shm\n    if (parts.length >= 6) {\n      result.push({\n        filesystem: parts[0],\n        size: parts[1],\n        used: parts[2],\n        avail: parts[3],\n        use_percent: parts[4],\n        mount: parts[5]\n      });\n    }\n  }\n\n  return result;\n}\n\n// แปลง stdout → JSON\nconst parsed = parseDfH(stdout);\n\n// --------------------------------------------------\n// ส่งออก RAW + JSON + timestamp\n// --------------------------------------------------\nreturn [\n  {\n    json: {\n      timestamp: ts,\n      raw_stdout: stdout,   // ← RAW เก็บตรงนี้\n      parsed_df: parsed     // ← JSON structured\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        6480
+      ],
+      "id": "d5cc0aa9-51a6-4ef0-ab1a-fc1fcb68d2aa",
+      "name": "Format df -h3",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "=raw_stdout",
+        "options": {
+          "fileName": "=df_{{$json.timestamp}}.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        6336
+      ],
+      "id": "586f6c29-660a-4bc3-a851-65d5bd98d3d7",
+      "name": "Convert to text7",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true,
+          "fileName": "=df_{{$json.timestamp}}.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        6624
+      ],
+      "id": "533a5d0a-d5f7-4474-b9d1-7df53b49c01d",
+      "name": "Convert to json7",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/HELPDESK-02/df/raw/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        6336
+      ],
+      "id": "3b160da0-36c9-4187-815e-d0e2829db241",
+      "name": "Save Text7"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/HELPDESK-02/df/json/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        6624
+      ],
+      "id": "bdb64611-30a5-4534-9fd0-8793f9d3b2fe",
+      "name": "Save Json7"
+    },
+    {
+      "parameters": {
+        "content": "HELPDESK-02\n",
+        "height": 80,
+        "width": 150,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -976,
+        4416
+      ],
+      "typeVersion": 1,
+      "id": "f76f4e19-c929-4c5a-b3e4-abedb6ec26df",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"status\": \"success\",\n  \"message\": \"DB-01 Create File Success\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        1392
+      ],
+      "id": "644d1bc8-55f6-4580-86cb-54ba589fd528",
+      "name": "Edit Fields",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"status\": \"success\",\n  \"message\": \"DOCS-01 Create File Success\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        2448
+      ],
+      "id": "b3cd1351-0ee6-4102-ab31-e05203eb9cf7",
+      "name": "Edit Fields1",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"status\": \"success\",\n  \"message\": \"ALL Create File Success\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1568,
+        1136
+      ],
+      "id": "b46acf28-e57f-4108-8179-c1dad9de8a84",
+      "name": "Edit Fields2",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"status\": \"success\",\n  \"message\": \"HELPDESK-01 Create File Success\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        1584
+      ],
+      "id": "b8023538-ee16-436b-a68b-f4e344b1b9c6",
+      "name": "Edit Fields3",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"status\": \"success\",\n  \"message\": \"HELPDESK-02 Create File Success\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        2256
+      ],
+      "id": "00dbd67d-9fb2-4d43-9c16-d98141d32f0e",
+      "name": "Edit Fields4",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Post Refresh Data').item.json.body.mode }}",
+                    "rightValue": "DB-01",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "83d7df89-48ff-44e2-9042-9463a7676234"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "770c8fc2-e80d-4b1c-84bb-10d2cc411536",
+                    "leftValue": "={{ $('Post Refresh Data').item.json.body.mode }}",
+                    "rightValue": "DOCS-01",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1d927315-945f-45d8-a901-65bc66909601",
+                    "leftValue": "={{ $('Post Refresh Data').item.json.body.mode }}",
+                    "rightValue": "HELPDESK-01",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "92950e22-f73a-4235-ab07-931b65d2c385",
+                    "leftValue": "={{ $('Post Refresh Data').item.json.body.mode }}",
+                    "rightValue": "HELPDESK-02",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1fd21cb3-2154-4299-997e-29e67e8dc40f",
+                    "leftValue": "={{ $('Post Refresh Data').item.json.body.mode }}",
+                    "rightValue": "ALL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c0d53acc-9902-46d4-8615-991a56b529c8",
+                    "leftValue": "={{ $('Post Refresh Data').item.json.body.mode }}",
+                    "rightValue": "APP-01",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        496
+      ],
+      "id": "bd714cf0-f6ac-4063-a545-aad0528bc8f8",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "numberInputs": 6
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        896,
+        2160
+      ],
+      "id": "99dcbeda-2539-4da6-8d84-fb845b402002",
+      "name": "Merge (DB-01)"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        896,
+        3728
+      ],
+      "id": "0b2235df-f864-44e3-8aa6-d563d61da35f",
+      "name": "Merge (DOCS-01)"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        896,
+        4880
+      ],
+      "id": "d22776df-aac3-440d-a27e-067f09aeddd5",
+      "name": "Merge (Service desk plus)"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        896,
+        6032
+      ],
+      "id": "f7c9af0c-b967-42c8-9aae-43dd6a770685",
+      "name": "Merge (New service desk plus)"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "numberInputs": 6
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1344,
+        1072
+      ],
+      "id": "871d28a4-df57-4caa-8850-e21d78963fc1",
+      "name": "Merge (ALL)"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1792,
+        1136
+      ],
+      "id": "51160249-945d-4245-a35c-e7cfccd277f7",
+      "name": "Respond (ALL)"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1568,
+        1392
+      ],
+      "id": "1467f1a7-5290-4000-bfea-b558500fa34c",
+      "name": "Respond (DB-01)"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1568,
+        1584
+      ],
+      "id": "20eeea33-8e67-47d0-9bfc-3ec5f7383387",
+      "name": "Respond (HELPDESK-01)"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1568,
+        2256
+      ],
+      "id": "a7984d4d-c75d-4ad0-95e4-9e7f059fa8b2",
+      "name": "Respond (HELPDESK-02)"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1568,
+        2448
+      ],
+      "id": "df995025-d4a4-4e00-b5f1-457fcc063898",
+      "name": "Respond (DOCS-01)"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "=raw_stdout",
+        "options": {
+          "fileName": "=df_{{$json.timestamp}}.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        576
+      ],
+      "id": "7447b49d-5490-458e-a928-fa5f072c51af",
+      "name": "Convert to text10",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/APP-01/df/raw/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        576
+      ],
+      "id": "30864958-ad6f-4511-ab6b-1b4635423183",
+      "name": "Save Text10"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/APP-01/df/json/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        864
+      ],
+      "id": "fe7b48b0-a884-45f3-ad41-ce10ca94a85c",
+      "name": "Save Json10"
+    },
+    {
+      "parameters": {
+        "content": "APP-01",
+        "height": 80,
+        "width": 150,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -880,
+        640
+      ],
+      "typeVersion": 1,
+      "id": "58d590e8-0fb5-4558-8114-abf79625ae73",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"status\": \"success\",\n  \"message\": \"APP-01 Create File Success\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1568,
+        608
+      ],
+      "id": "10c727fb-95bc-4a33-af23-95978d2bd567",
+      "name": "Edit Fields5",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ======================\n// รับ stdout จาก Execute Command\n// ======================\nlet stdout = $input.first().json.stdout || \"\";\n\n// แปลง literal \"\\n\" → newline จริง (กรณีได้มาเป็น string เดียว)\nstdout = stdout.replace(/\\\\n/g, \"\\n\");\n\n// ======================\n// timestamp (TH +7)\n// ======================\nconst now = new Date();\n\nconst ts =\n  now.getFullYear() + \"-\" +\n  String(now.getMonth() + 1).padStart(2, \"0\") + \"-\" +\n  String(now.getDate()).padStart(2, \"0\") + \"_\" +\n  String(now.getHours()).padStart(2, \"0\") + \"-\" +\n  String(now.getMinutes()).padStart(2, \"0\") + \"-\" +\n  String(now.getSeconds()).padStart(2, \"0\");\n\n// ======================\n// parse top\n// ======================\nfunction parseTopRaw(stdout) {\n  const lines = stdout\n    .split(\"\\n\")\n    .map(l => l.trim())\n    .filter(Boolean);\n\n  const result = {\n    system: {},\n    tasks: {},\n    cpu: {},\n    memory: {},\n    swap: {},\n    processes: []\n  };\n\n  // ---------- System ----------\n  const sysLine = lines.find(l => l.startsWith(\"top -\"));\n  if (sysLine) {\n    const m = sysLine.match(\n      /top -\\s*([0-9:]+)\\s+up\\s+(.*?),\\s+(\\d+)\\s+users?,\\s+load average:\\s*([0-9.,]+),\\s*([0-9.,]+),\\s*([0-9.,]+)/\n    );\n    if (m) {\n      result.system = {\n        time: m[1],\n        uptime: m[2],\n        users: Number(m[3]),\n        loadavg: {\n          \"1min\": Number(m[4]),\n          \"5min\": Number(m[5]),\n          \"15min\": Number(m[6])\n        }\n      };\n    }\n  }\n\n  // ---------- Tasks ----------\n  const tasksLine = lines.find(l => l.startsWith(\"Tasks:\"));\n  if (tasksLine) {\n    const m = tasksLine.match(\n      /Tasks:\\s+(\\d+)\\s+total,\\s+(\\d+)\\s+running,\\s+(\\d+)\\s+sleeping,\\s+(\\d+)\\s+stopped,\\s+(\\d+)\\s+zombie/\n    );\n    if (m) {\n      result.tasks = {\n        total: Number(m[1]),\n        running: Number(m[2]),\n        sleeping: Number(m[3]),\n        stopped: Number(m[4]),\n        zombie: Number(m[5])\n      };\n    }\n  }\n\n  // ---------- CPU ----------\n  const cpuLine = lines.find(l => l.includes(\"Cpu(s):\"));\n  if (cpuLine) {\n    const pairs = [...cpuLine.matchAll(/([0-9.]+)\\s*%?\\s*([a-z]{2})/gi)];\n    const map = {};\n    for (const p of pairs) map[p[2]] = Number(p[1]);\n\n    result.cpu = {\n      user: map.us ?? null,\n      system: map.sy ?? null,\n      nice: map.ni ?? null,\n      idle: map.id ?? null,\n      wait: map.wa ?? null,\n      hardware_irq: map.hi ?? null,\n      software_irq: map.si ?? null,\n      steal: map.st ?? null\n    };\n  }\n\n  // ---------- Memory ----------\n  const memLine =\n    lines.find(l => /^KiB\\s+Mem\\s*:/i.test(l)) ||\n    lines.find(l => /^MiB\\s+Mem\\s*:/i.test(l)) ||\n    lines.find(l => l.startsWith(\"Mem:\"));\n\n  if (memLine) {\n    let m = memLine.match(\n      /:\\s*(\\d+)\\s+total,\\s*(\\d+)\\s+free,\\s*(\\d+)\\s+used,\\s*(\\d+)\\s+buff\\/cache/i\n    );\n    if (m) {\n      result.memory = {\n        total_kb: Number(m[1]),\n        free_kb: Number(m[2]),\n        used_kb: Number(m[3]),\n        buff_cache_kb: Number(m[4])\n      };\n    } else {\n      m = memLine.match(\n        /Mem:\\s+(\\d+)k?\\s+total,\\s+(\\d+)k?\\s+used,\\s+(\\d+)k?\\s+free,\\s+(\\d+)k?\\s+buffers/i\n      );\n      if (m) {\n        result.memory = {\n          total_kb: Number(m[1]),\n          used_kb: Number(m[2]),\n          free_kb: Number(m[3]),\n          buffers_kb: Number(m[4])\n        };\n      }\n    }\n  }\n\n  // ---------- Swap ----------\n  const swapLine =\n    lines.find(l => /^KiB\\s+Swap\\s*:/i.test(l)) ||\n    lines.find(l => /^MiB\\s+Swap\\s*:/i.test(l)) ||\n    lines.find(l => l.startsWith(\"Swap:\"));\n\n  if (swapLine) {\n    let s = swapLine.match(\n      /:\\s*(\\d+)\\s+total,\\s*(\\d+)\\s+free,\\s*(\\d+)\\s+used\\.\\s*(\\d+)\\s+avail\\s+Mem/i\n    );\n    if (s) {\n      result.swap = {\n        total_kb: Number(s[1]),\n        free_kb: Number(s[2]),\n        used_kb: Number(s[3]),\n        avail_mem_kb: Number(s[4])\n      };\n    } else {\n      s = swapLine.match(\n        /Swap:\\s+(\\d+)k?\\s+total,\\s+(\\d+)k?\\s+used,\\s+(\\d+)k?\\s+free,\\s+(\\d+)k?\\s+cached/i\n      );\n      if (s) {\n        result.swap = {\n          total_kb: Number(s[1]),\n          used_kb: Number(s[2]),\n          free_kb: Number(s[3]),\n          cached_kb: Number(s[4])\n        };\n      }\n    }\n  }\n\n  // ---------- Processes ----------\n  const headerIndex = lines.findIndex(l => l.startsWith(\"PID \"));\n  if (headerIndex !== -1) {\n    const procLines = lines.slice(headerIndex + 1);\n    for (const line of procLines) {\n      const cols = line.split(/\\s+/);\n      if (cols.length < 12) continue;\n\n      result.processes.push({\n        pid: Number(cols[0]),\n        user: cols[1],\n        pr: cols[2],\n        ni: cols[3],\n        virt: cols[4],\n        res: cols[5],\n        shr: cols[6],\n        state: cols[7],\n        cpu: Number(cols[8]),\n        mem: Number(cols[9]),\n        time: cols[10],\n        command: cols.slice(11).join(\" \")\n      });\n    }\n  }\n\n  return result;\n}\n\n// ======================\n// RUN\n// ======================\nconst parsed = parseTopRaw(stdout);\n\n// ======================\n// n8n ต้อง return array เสมอ\n// ======================\nreturn [\n  {\n    json: {\n      timestamp: ts,\n      raw_stdout: stdout,\n      parsed_top: parsed\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        1296
+      ],
+      "id": "87d18b7e-6372-4023-8908-5a9f2aa8d3e6",
+      "name": "Format top4",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "=raw_stdout",
+        "options": {
+          "fileName": "=top_{{$json.timestamp}}.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        1152
+      ],
+      "id": "cec37f89-240d-40d3-89bc-8e38fb954f27",
+      "name": "Convert to text9",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true,
+          "fileName": "=top_{{$json.timestamp}}.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        1440
+      ],
+      "id": "5c35f3b9-962a-413d-baad-d87b0756835b",
+      "name": "Convert to json9",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/APP-01/top/json/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        1440
+      ],
+      "id": "654d00b5-a112-40f1-a0a5-8df22e8eccf6",
+      "name": "Save Json9"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/APP-01/top/raw/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        1152
+      ],
+      "id": "a82c30b3-9492-4371-b1e9-e29639891475",
+      "name": "Save Text9"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ----------------------\n// รับ stdout\n// ----------------------\nlet stdout = $input.first().json.stdout || \"\";\nstdout = stdout.replace(/\\\\n/g, \"\\n\");\n\n// ----------------------\n// แยกบรรทัด + cleanup\n// ----------------------\nconst lines = stdout\n  .split(\"\\n\")\n  .map(l => l.trim())\n  .filter(l =>\n    l &&\n    !l.startsWith(\"Last login\") &&\n    !l.endsWith(\"rows selected.\") &&\n    !/^[-]+$/.test(l)\n  );\n\n// ----------------------\n// parse แบบ state\n// ----------------------\nlet tablespaces = {};\nlet currentTablespace = null;\nlet currentRowType = null;\nlet currentDatafile = null;\n\nfor (const line of lines) {\n\n  if (line.startsWith(\"TABLESPACE\")) {\n    currentRowType = \"TABLESPACE\";\n    currentTablespace = line.replace(/^TABLESPACE\\s+/, \"\");\n\n    if (!tablespaces[currentTablespace]) {\n      tablespaces[currentTablespace] = {\n        tablespace_name: currentTablespace,\n        summary: {},\n        datafiles: []\n      };\n    }\n    continue;\n  }\n\n  if (line.startsWith(\"DATAFILE\")) {\n    currentRowType = \"DATAFILE\";\n    currentTablespace = line.replace(/^DATAFILE\\s+/, \"\");\n    continue;\n  }\n\n  if (currentRowType === \"DATAFILE\" && line.startsWith(\"/\")) {\n    currentDatafile = line;\n    continue;\n  }\n\n  // ตัวเลข\n  if (/^[\\d.]/.test(line) && currentTablespace) {\n    const parts = line.split(/\\s+/);\n\n    // summary tablespace\n    if (currentRowType === \"TABLESPACE\" && parts.length >= 5) {\n      tablespaces[currentTablespace].summary = {\n        current_size_mb: Number(parts[0]),\n        used_mb: Number(parts[1]),\n        free_mb: Number(parts[2]),\n        used_percent: Number(parts[3]),\n        max_size_mb: Number(parts[4])\n      };\n    }\n\n    // datafile detail\n    if (currentRowType === \"DATAFILE\" && parts.length >= 6 && currentDatafile) {\n      tablespaces[currentTablespace].datafiles.push({\n        datafile_name: currentDatafile,\n        current_size_mb: Number(parts[0]),\n        used_mb: Number(parts[1]),\n        free_mb: Number(parts[2]),\n        used_percent: Number(parts[3]),\n        max_size_mb: Number(parts[4]),\n        autoextend: parts[5]\n      });\n      currentDatafile = null;\n    }\n  }\n}\n\n// ----------------------\n// timestamp (TH)\n// ----------------------\nconst now = new Date();\nconst ts =\n  now.getFullYear() + \"-\" +\n  String(now.getMonth() + 1).padStart(2, \"0\") + \"-\" +\n  String(now.getDate()).padStart(2, \"0\") + \"_\" +\n  String(now.getHours()).padStart(2, \"0\") + \"-\" +\n  String(now.getMinutes()).padStart(2, \"0\") + \"-\" +\n  String(now.getSeconds()).padStart(2, \"0\");\n\n// ----------------------\n// helper: pad สำหรับ raw report\n// ----------------------\nfunction pad(str, len, align = \"left\") {\n  str = String(str ?? \"\");\n  if (str.length >= len) return str.slice(0, len);\n  const space = \" \".repeat(len - str.length);\n  return align === \"right\" ? space + str : str + space;\n}\n\n// ----------------------\n// สร้าง raw_pretty report\n// ----------------------\nlet raw = \"\";\n\nraw +=\n  pad(\"Tablespace Name\", 30) +\n  pad(\"Maximum Size MB\", 15, \"right\") +\n  pad(\"Used Size to Max MB\", 21, \"right\") +\n  pad(\"%Used to Max\", 14, \"right\") +\n  pad(\"Current Size MB\", 17, \"right\") +\n  pad(\"Used Size to Current MB\", 23, \"right\") +\n  pad(\"%Used to Current\", 18, \"right\") +\n  \"\\n\";\n\nraw +=\n  \"-\".repeat(30) +\n  \"-\".repeat(15) +\n  \"-\".repeat(21) +\n  \"-\".repeat(14) +\n  \"-\".repeat(17) +\n  \"-\".repeat(23) +\n  \"-\".repeat(18) +\n  \"\\n\";\n\nraw += \"\\nDataFile Detail\\n\";\nraw += \"-\".repeat(180) + \"\\n\\n\";\n\nfor (const tsObj of Object.values(tablespaces)) {\n  const s = tsObj.summary;\n\n  raw +=\n    pad(tsObj.tablespace_name, 30) +\n    pad(s.max_size_mb.toFixed(2), 15, \"right\") +\n    pad(s.used_mb.toFixed(2), 21, \"right\") +\n    pad(((s.used_mb / s.max_size_mb) * 100).toFixed(2), 14, \"right\") +\n    pad(s.current_size_mb.toFixed(2), 17, \"right\") +\n    pad(s.used_mb.toFixed(2), 23, \"right\") +\n    pad(s.used_percent.toFixed(2), 18, \"right\") +\n    \"\\n\";\n\n  for (const df of tsObj.datafiles) {\n    raw +=\n      df.datafile_name +\n      \" [Cur=\" + df.current_size_mb + \"MB\" +\n      \", Max=\" + df.max_size_mb + \"MB\" +\n      \", Auto=\" + df.autoextend + \"]\\n\";\n  }\n\n  raw += \"\\n\";\n}\n\n// ----------------------\n// output\n// ----------------------\nreturn [\n  {\n    json: {\n      timestamp: ts,\n      tablespaces: Object.values(tablespaces),\n      raw_stdout: raw\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        144
+      ],
+      "id": "4f7ab06f-8427-4f57-9ece-dfb13c404105",
+      "name": "Format tablespace",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "=raw_stdout",
+        "options": {
+          "fileName": "=tablespace_{{$json.timestamp}}.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "289aeb03-5ede-4f4d-bd59-1a68579c95d5",
+      "name": "Convert to text11",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true,
+          "fileName": "=tablespace_{{$json.timestamp}}.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        288
+      ],
+      "id": "5e3ba443-f115-4e0b-9cfc-5e9da3ae45f8",
+      "name": "Convert to json11",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/APP-01/tablespace/raw/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        0
+      ],
+      "id": "42e1da07-5edf-49b5-ac63-575bc3d1ffe5",
+      "name": "Save Text11"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/APP-01/tablespace/json/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        288
+      ],
+      "id": "1c1cead8-6932-457b-9317-60639ad4e7ac",
+      "name": "Save Json11"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ----------------------\n// รับ stdout\n// ----------------------\nlet stdout = $input.first().json.stdout || \"\";\nstdout = stdout.replace(/\\\\n/g, \"\\n\");\n\n// ----------------------\n// แยกบรรทัด + cleanup\n// ----------------------\nconst lines = stdout\n  .split(\"\\n\")\n  .map(l => l.trim())\n  .filter(l =>\n    l &&\n    !l.startsWith(\"Last login\") &&\n    !l.endsWith(\"rows selected.\") &&\n    !/^[-]+$/.test(l)\n  );\n\n// ----------------------\n// parse แบบ state\n// ----------------------\nlet tablespaces = {};\nlet currentTablespace = null;\nlet currentRowType = null;\nlet currentDatafile = null;\n\nfor (const line of lines) {\n\n  if (line.startsWith(\"TABLESPACE\")) {\n    currentRowType = \"TABLESPACE\";\n    currentTablespace = line.replace(/^TABLESPACE\\s+/, \"\");\n\n    if (!tablespaces[currentTablespace]) {\n      tablespaces[currentTablespace] = {\n        tablespace_name: currentTablespace,\n        summary: {},\n        datafiles: []\n      };\n    }\n    continue;\n  }\n\n  if (line.startsWith(\"DATAFILE\")) {\n    currentRowType = \"DATAFILE\";\n    currentTablespace = line.replace(/^DATAFILE\\s+/, \"\");\n    continue;\n  }\n\n  if (currentRowType === \"DATAFILE\" && line.startsWith(\"/\")) {\n    currentDatafile = line;\n    continue;\n  }\n\n  // ตัวเลข\n  if (/^[\\d.]/.test(line) && currentTablespace) {\n    const parts = line.split(/\\s+/);\n\n    // summary tablespace\n    if (currentRowType === \"TABLESPACE\" && parts.length >= 5) {\n      tablespaces[currentTablespace].summary = {\n        current_size_mb: Number(parts[0]),\n        used_mb: Number(parts[1]),\n        free_mb: Number(parts[2]),\n        used_percent: Number(parts[3]),\n        max_size_mb: Number(parts[4])\n      };\n    }\n\n    // datafile detail\n    if (currentRowType === \"DATAFILE\" && parts.length >= 6 && currentDatafile) {\n      tablespaces[currentTablespace].datafiles.push({\n        datafile_name: currentDatafile,\n        current_size_mb: Number(parts[0]),\n        used_mb: Number(parts[1]),\n        free_mb: Number(parts[2]),\n        used_percent: Number(parts[3]),\n        max_size_mb: Number(parts[4]),\n        autoextend: parts[5]\n      });\n      currentDatafile = null;\n    }\n  }\n}\n\n// ----------------------\n// timestamp (TH)\n// ----------------------\nconst now = new Date();\nconst ts =\n  now.getFullYear() + \"-\" +\n  String(now.getMonth() + 1).padStart(2, \"0\") + \"-\" +\n  String(now.getDate()).padStart(2, \"0\") + \"_\" +\n  String(now.getHours()).padStart(2, \"0\") + \"-\" +\n  String(now.getMinutes()).padStart(2, \"0\") + \"-\" +\n  String(now.getSeconds()).padStart(2, \"0\");\n\n// ----------------------\n// helper: pad สำหรับ raw report\n// ----------------------\nfunction pad(str, len, align = \"left\") {\n  str = String(str ?? \"\");\n  if (str.length >= len) return str.slice(0, len);\n  const space = \" \".repeat(len - str.length);\n  return align === \"right\" ? space + str : str + space;\n}\n\n// ----------------------\n// สร้าง raw_pretty report\n// ----------------------\nlet raw = \"\";\n\nraw +=\n  pad(\"Tablespace Name\", 30) +\n  pad(\"Maximum Size MB\", 15, \"right\") +\n  pad(\"Used Size to Max MB\", 21, \"right\") +\n  pad(\"%Used to Max\", 14, \"right\") +\n  pad(\"Current Size MB\", 17, \"right\") +\n  pad(\"Used Size to Current MB\", 23, \"right\") +\n  pad(\"%Used to Current\", 18, \"right\") +\n  \"\\n\";\n\nraw +=\n  \"-\".repeat(30) +\n  \"-\".repeat(15) +\n  \"-\".repeat(21) +\n  \"-\".repeat(14) +\n  \"-\".repeat(17) +\n  \"-\".repeat(23) +\n  \"-\".repeat(18) +\n  \"\\n\";\n\nraw += \"\\nDataFile Detail\\n\";\nraw += \"-\".repeat(180) + \"\\n\\n\";\n\nfor (const tsObj of Object.values(tablespaces)) {\n  const s = tsObj.summary;\n\n  raw +=\n    pad(tsObj.tablespace_name, 30) +\n    pad(s.max_size_mb.toFixed(2), 15, \"right\") +\n    pad(s.used_mb.toFixed(2), 21, \"right\") +\n    pad(((s.used_mb / s.max_size_mb) * 100).toFixed(2), 14, \"right\") +\n    pad(s.current_size_mb.toFixed(2), 17, \"right\") +\n    pad(s.used_mb.toFixed(2), 23, \"right\") +\n    pad(s.used_percent.toFixed(2), 18, \"right\") +\n    \"\\n\";\n\n  for (const df of tsObj.datafiles) {\n    raw +=\n      df.datafile_name +\n      \" [Cur=\" + df.current_size_mb + \"MB\" +\n      \", Max=\" + df.max_size_mb + \"MB\" +\n      \", Auto=\" + df.autoextend + \"]\\n\";\n  }\n\n  raw += \"\\n\";\n}\n\n// ----------------------\n// output\n// ----------------------\nreturn [\n  {\n    json: {\n      timestamp: ts,\n      tablespaces: Object.values(tablespaces),\n      raw_stdout: raw\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        1872
+      ],
+      "id": "cce039d9-ed09-48d5-a9de-27311edb139d",
+      "name": "Format tablespace1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "=raw_stdout",
+        "options": {
+          "fileName": "=tablespace_{{$json.timestamp}}.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        1728
+      ],
+      "id": "dfeb8741-38f7-4a22-9c5c-36411d36e232",
+      "name": "Convert to text12",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true,
+          "fileName": "=tablespace_{{$json.timestamp}}.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        2016
+      ],
+      "id": "94a7703c-496f-4ecc-aca0-4fe7192baae3",
+      "name": "Convert to json12",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/DB-01/tablespace/raw/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": false
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        1728
+      ],
+      "id": "7ec5724b-b21a-4774-87eb-239d4683296d",
+      "name": "Save Text12"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/monitor/log/DB-01/tablespace/json/{{$now.format('y/MM')}}/{{$binary.data.fileName}}",
+        "options": {
+          "append": true
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        2016
+      ],
+      "id": "d5d782c8-9d11-4e1d-ad11-c0af06d2fc84",
+      "name": "Save Json12"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "numberInputs": 6
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        896,
+        432
+      ],
+      "id": "7692c814-9025-459b-ac76-258df148f0a5",
+      "name": "Merge (APP-01)"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/DB-01/tablespace/raw/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        1808
+      ],
+      "id": "c9d200a9-efbc-47a8-bcea-e49ef94addd2",
+      "name": "Execute Command"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        1728
+      ],
+      "id": "c664f6fa-55a8-499b-b533-b14becdbc829",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/DB-01/tablespace/json/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        2096
+      ],
+      "id": "b133a636-befc-465d-9bb7-1404b0a73cf7",
+      "name": "Execute Command1"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        2016
+      ],
+      "id": "fb191d02-3db2-43a4-afdb-181dc07d7684",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/APP-01/tablespace/raw/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        80
+      ],
+      "id": "77efe282-23ea-4ae2-9112-c77778d02c79",
+      "name": "Execute Command2"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "869401c8-3612-4b08-910d-2f43a60de171",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/APP-01/tablespace/json/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        368
+      ],
+      "id": "99b33168-9dc1-4225-a3eb-639b77ce458f",
+      "name": "Execute Command3"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        288
+      ],
+      "id": "477fb9ce-1bdf-4ced-99c8-a01a37c0351d",
+      "name": "Merge4"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/APP-01/df/raw/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        656
+      ],
+      "id": "e74656b5-746b-49ec-b984-b5a4f959411b",
+      "name": "Execute Command4"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        576
+      ],
+      "id": "ba2f30ea-ec6e-40a6-96a8-9e424446706c",
+      "name": "Merge5"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/APP-01/df/json/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        240,
+        976
+      ],
+      "id": "d3015c2a-11f9-4b0e-9bca-437ab6d60562",
+      "name": "Execute Command5"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        864
+      ],
+      "id": "4f13e308-3d14-46b9-b282-7dc5635841d1",
+      "name": "Merge6"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/APP-01/top/raw/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        1232
+      ],
+      "id": "1afd7dd1-4674-49c3-8005-1a39a397c2de",
+      "name": "Execute Command6"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        1152
+      ],
+      "id": "f4f1160f-8c23-4008-a932-e7b544932d7c",
+      "name": "Merge7"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/APP-01/top/json/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        1520
+      ],
+      "id": "f8261c29-6cf8-4d0c-8b97-4ccdb67a6075",
+      "name": "Execute Command7"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        1440
+      ],
+      "id": "ba1bb4db-2525-4760-9537-f6bb79f24486",
+      "name": "Merge8"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/DB-01/top/raw/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        2384
+      ],
+      "id": "85aa6964-3c87-431e-8793-55ef63e2d2eb",
+      "name": "Execute Command8"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        2304
+      ],
+      "id": "744d320b-a4c9-41c5-95fb-e9cf8cb1726c",
+      "name": "Merge9"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/DB-01/top/json/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        2672
+      ],
+      "id": "8b8e7ddf-843b-4fcf-a2b3-7a78b73aeacb",
+      "name": "Execute Command9"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        2592
+      ],
+      "id": "099ef03a-c826-41ca-be7d-72916b0f6a57",
+      "name": "Merge10"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/DB-01/df/raw/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        2960
+      ],
+      "id": "c8393d7b-1d97-4bb3-b4b4-df735a75c729",
+      "name": "Execute Command10"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        2880
+      ],
+      "id": "e20c2454-c284-43f4-920c-0d6380ff6acc",
+      "name": "Merge11"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/DB-01/df/json/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        3248
+      ],
+      "id": "7836f736-2e8f-4c51-850b-0f776630d47d",
+      "name": "Execute Command11"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        3168
+      ],
+      "id": "b434a6bf-8016-4d05-aea7-afc5e1c37734",
+      "name": "Merge12"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/DOCS-01/top/raw/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        3536
+      ],
+      "id": "58de6dc6-0f09-44fe-98c0-a7e3c9376d3e",
+      "name": "Execute Command12"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        3456
+      ],
+      "id": "24d72595-8424-4745-8464-b3f1ca9827e6",
+      "name": "Merge13"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/DOCS-01/top/json/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        3824
+      ],
+      "id": "9a2e0af0-0841-4387-94e9-10514dfcf755",
+      "name": "Execute Command13"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        3744
+      ],
+      "id": "3be77b23-02fb-4cfa-9773-3ccfe4d68504",
+      "name": "Merge14"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/DOCS-01/df/raw/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        4112
+      ],
+      "id": "92a1b356-efd3-4e24-a16f-3c3829bc7028",
+      "name": "Execute Command14"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        4032
+      ],
+      "id": "a527f934-ebea-4c9e-a860-57e327b7c909",
+      "name": "Merge15"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/DOCS-01/df/json/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        4400
+      ],
+      "id": "8a595028-da1e-47b1-8514-dfeeba97daaa",
+      "name": "Execute Command15"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        4320
+      ],
+      "id": "14d993ed-1535-4a59-8cc1-3477b7f97653",
+      "name": "Merge16"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/Service\\ Desk\\ Plus/top/raw/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        4688
+      ],
+      "id": "6efd52c7-3bf0-4a56-a474-44087935af29",
+      "name": "Execute Command16"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        4608
+      ],
+      "id": "823451dc-da03-4d9c-ba27-61f37bd91132",
+      "name": "Merge17"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/Service\\ Desk\\ Plus/top/json/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        4976
+      ],
+      "id": "e2fb9b26-6fab-4f6a-b30a-4dd41754537a",
+      "name": "Execute Command17"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        4896
+      ],
+      "id": "6afec665-ad9a-4f86-b67d-d9ed4ec532a1",
+      "name": "Merge18"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/Service\\ Desk\\ Plus/df/raw/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        5264
+      ],
+      "id": "cd06199d-28a1-4161-9fb9-d32786f4ff53",
+      "name": "Execute Command18"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        5184
+      ],
+      "id": "dce09568-5e56-4d0c-a098-2d838ade829c",
+      "name": "Merge19"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/Service\\ Desk\\ Plus/df/json/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        5552
+      ],
+      "id": "13fd7f6a-7fc4-4126-bab9-f92a6f3fcf7d",
+      "name": "Execute Command19"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        5472
+      ],
+      "id": "bbf4c8e2-bd55-4698-801e-ad507c325fed",
+      "name": "Merge20"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/New\\ Service\\ Desk\\ Plus/top/raw/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        5840
+      ],
+      "id": "a2cea867-f639-4d0d-a373-ab31ff240f9e",
+      "name": "Execute Command20"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        5760
+      ],
+      "id": "b8cd85f9-8750-4386-ab91-9dd60504b682",
+      "name": "Merge21"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/New\\ Service\\ Desk\\ Plus/top/json/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        6128
+      ],
+      "id": "96abcba4-f50d-43ec-be86-9cc65f312116",
+      "name": "Execute Command21"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        6048
+      ],
+      "id": "ed6c855e-dbb9-4096-9a9d-ddff34171ba3",
+      "name": "Merge22"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/New\\ Service\\ Desk\\ Plus/df/raw/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        6416
+      ],
+      "id": "2150a4fc-58ee-45b5-9c32-8975790cfb0d",
+      "name": "Execute Command22"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        6336
+      ],
+      "id": "78ee3a7a-43d3-4ead-9002-8e432e5567d6",
+      "name": "Merge23"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "mkdir -p /data/monitor/log/New\\ Service\\ Desk\\ Plus/df/json/$(date +%Y/%m)"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        6704
+      ],
+      "id": "3e0297df-20c7-4ea8-b5b7-1fc2c69da9d1",
+      "name": "Execute Command23"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        6624
+      ],
+      "id": "f0e25514-4442-49ac-976e-28d9de01da1b",
+      "name": "Merge24"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "refresh",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -896,
+        3024
+      ],
+      "id": "8f388240-6a95-4a1c-8fa3-ea3deeee2e16",
+      "name": "Post Refresh Data",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.mode }}",
+                    "rightValue": "ALL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "83d7df89-48ff-44e2-9042-9463a7676234"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "770c8fc2-e80d-4b1c-84bb-10d2cc411536",
+                    "leftValue": "={{ $json.body.mode }}",
+                    "rightValue": "DB-01",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1d927315-945f-45d8-a901-65bc66909601",
+                    "leftValue": "={{ $json.body.mode }}",
+                    "rightValue": "DOCS-01",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "92950e22-f73a-4235-ab07-931b65d2c385",
+                    "leftValue": "={{ $json.body.mode }}",
+                    "rightValue": "HELPDESK-01",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1fd21cb3-2154-4299-997e-29e67e8dc40f",
+                    "leftValue": "={{ $json.body.mode }}",
+                    "rightValue": "HELPDESK-02",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d23625d3-199e-40e4-9437-d3bb187121b8",
+                    "leftValue": "={{ $json.body.mode }}",
+                    "rightValue": "APP-01",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -672,
+        2960
+      ],
+      "id": "40c48e54-c0dc-41b2-8b78-2ce5933b30d7",
+      "name": "Switch Server"
+    },
+    {
+      "parameters": {
+        "command": "df -h"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        6480
+      ],
+      "id": "7c55ae1a-1a60-49ef-9532-7e5dff535116",
+      "name": "HELPDESK-02 [df -h]",
+      "credentials": {
+        "sshPassword": {
+          "id": "REPLACE_ME",
+          "name": "ssh-helpdesk-02"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "top -b -d 5 -n 1 | head -n 30"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        5904
+      ],
+      "id": "7eaae161-7aa2-4d6d-ae4e-53ea64502072",
+      "name": "HELPDESK-02 [top]",
+      "credentials": {
+        "sshPassword": {
+          "id": "REPLACE_ME",
+          "name": "ssh-helpdesk-02"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "df -h"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        5328
+      ],
+      "id": "29b76047-176a-4236-8351-56f3184d6b1f",
+      "name": "HELPDESK-01 [df -h]",
+      "credentials": {
+        "sshPassword": {
+          "id": "REPLACE_ME",
+          "name": "ssh-helpdesk-01"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "top -b -d 5 -n 1"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        4752
+      ],
+      "id": "7685723b-773d-4ebb-b1a0-399545fab5b9",
+      "name": "HELPDESK-01 [top]",
+      "credentials": {
+        "sshPassword": {
+          "id": "REPLACE_ME",
+          "name": "ssh-helpdesk-01"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "df -h"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        4176
+      ],
+      "id": "3886f256-9113-4570-9fe8-959e20836b16",
+      "name": "DOCS-01 [df -h]",
+      "credentials": {
+        "sshPassword": {
+          "id": "REPLACE_ME",
+          "name": "ssh-docs-01"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "top -b -d 5 -n 1"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        3600
+      ],
+      "id": "c5097aa5-fb6b-4479-9732-a8cb7611c5c1",
+      "name": "DOCS-01 [top]",
+      "credentials": {
+        "sshPassword": {
+          "id": "REPLACE_ME",
+          "name": "ssh-docs-01"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "df -h"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        3024
+      ],
+      "id": "c1e7e460-425c-4e3d-bcf1-16174b9a210b",
+      "name": "DB-01 [df -h]",
+      "credentials": {
+        "sshPassword": {
+          "id": "REPLACE_ME",
+          "name": "ssh-db-01"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "top -b -d 5 -n 1"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        2448
+      ],
+      "id": "950c7abb-4400-4c59-8c2d-5e690abea22d",
+      "name": "DB-01 [top]",
+      "credentials": {
+        "sshPassword": {
+          "id": "REPLACE_ME",
+          "name": "ssh-db-01"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "=su - oracle -c \"sqlplus -s / as sysdba <<EOF\nset pages 300\nset lines 400\nset define off\nset trimspool on\nset sqlblanklines on\n\n/* =========================\n   TABLESPACE SUMMARY\n   ========================= */\nSELECT\n    'TABLESPACE'                              AS row_type,\n    d.tablespace_name                         AS tablespace,\n    NULL                                      AS datafile,\n    ROUND(d.curr/1024/1024, 2)                AS current_size_mb,\n    ROUND((d.curr - f.free)/1024/1024, 2)     AS used_mb,\n    ROUND(f.free/1024/1024, 2)                AS free_mb,\n    ROUND(((d.curr - f.free)/d.curr) * 100,2) AS used_percent,\n    ROUND(d.max/1024/1024, 2)                 AS max_size_mb,\n    NULL                                      AS autoextend\nFROM\n(\n    SELECT tablespace_name,\n           SUM(bytes) AS curr,\n           SUM(DECODE(autoextensible,'YES',maxbytes,bytes)) AS max\n    FROM dba_data_files\n    GROUP BY tablespace_name\n) d\nJOIN\n(\n    SELECT tablespace_name,\n           SUM(bytes) AS free\n    FROM dba_free_space\n    GROUP BY tablespace_name\n) f\nON d.tablespace_name = f.tablespace_name\n\nUNION ALL\n\n/* =========================\n   DATAFILE DETAIL\n   ========================= */\nSELECT\n    'DATAFILE'                               AS row_type,\n    df.tablespace_name                       AS tablespace,\n    df.file_name                             AS datafile,\n    ROUND(df.bytes/1024/1024, 2)             AS current_size_mb,\n    ROUND((df.bytes - NVL(fs.free_bytes,0))/1024/1024, 2)\n                                             AS used_mb,\n    ROUND(NVL(fs.free_bytes,0)/1024/1024, 2)\n                                             AS free_mb,\n    ROUND(((df.bytes - NVL(fs.free_bytes,0)) / df.bytes) * 100, 2)\n                                             AS used_percent,\n    ROUND(DECODE(df.autoextensible,'YES',df.maxbytes,df.bytes)\n         /1024/1024, 2)\n                                             AS max_size_mb,\n    df.autoextensible                        AS autoextend\nFROM dba_data_files df\nLEFT JOIN (\n    SELECT\n        file_id,\n        SUM(bytes) AS free_bytes\n    FROM dba_free_space\n    GROUP BY file_id\n) fs\nON df.file_id = fs.file_id\n\nORDER BY tablespace, row_type DESC, datafile;\n\nexit\nEOF\"\n"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        1872
+      ],
+      "id": "450418b8-33c1-45f8-bde7-28c02886917e",
+      "name": "DB-01 [TableSpace]",
+      "credentials": {
+        "sshPassword": {
+          "id": "REPLACE_ME",
+          "name": "ssh-db-01"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "top -b -d 5 -n 1"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        1296
+      ],
+      "id": "7c4a7ca0-e352-4091-832d-6969b418c2d0",
+      "name": "APP-01 [top]",
+      "credentials": {
+        "sshPassword": {
+          "id": "REPLACE_ME",
+          "name": "ssh-app-01"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "df -h"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        720
+      ],
+      "id": "a1ee4511-628e-4794-870c-e461ad7682b2",
+      "name": "APP-01 [df -h]",
+      "credentials": {
+        "sshPassword": {
+          "id": "REPLACE_ME",
+          "name": "ssh-app-01"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "=su - oraerpp <<'EOF'\nsqlplus -s / as sysdba <<'SQL'\nset pages 300\nset lines 400\nset define off\nset trimspool on\nset sqlblanklines on\n\n/* =========================\n   TABLESPACE SUMMARY\n   ========================= */\nSELECT\n    'TABLESPACE'                              AS row_type,\n    d.tablespace_name                         AS tablespace,\n    CAST(NULL AS VARCHAR2(400))               AS datafile,\n    ROUND(d.curr/1024/1024, 2)                AS current_size_mb,\n    ROUND((d.curr - f.free)/1024/1024, 2)     AS used_mb,\n    ROUND(f.free/1024/1024, 2)                AS free_mb,\n    ROUND(((d.curr - f.free)/d.curr) * 100,2) AS used_percent,\n    ROUND(d.max/1024/1024, 2)                 AS max_size_mb,\n    CAST(NULL AS VARCHAR2(3))                 AS autoextend\nFROM\n(\n    SELECT tablespace_name,\n           SUM(bytes) AS curr,\n           SUM(DECODE(autoextensible,'YES',maxbytes,bytes)) AS max\n    FROM dba_data_files\n    GROUP BY tablespace_name\n) d\nJOIN\n(\n    SELECT tablespace_name,\n           SUM(bytes) AS free\n    FROM dba_free_space\n    GROUP BY tablespace_name\n) f\nON d.tablespace_name = f.tablespace_name\n\nUNION ALL\n\n/* =========================\n   DATAFILE DETAIL (ของเดิมคุณ)\n   ========================= */\nSELECT\n    'DATAFILE'                               AS row_type,\n    df.tablespace_name                       AS tablespace,\n    df.file_name                             AS datafile,\n    ROUND(df.bytes/1024/1024, 2)             AS current_size_mb,\n    ROUND((df.bytes - NVL(fs.free_bytes,0))/1024/1024, 2)\n                                             AS used_mb,\n    ROUND(NVL(fs.free_bytes,0)/1024/1024, 2)\n                                             AS free_mb,\n    ROUND(((df.bytes - NVL(fs.free_bytes,0)) / df.bytes) * 100, 2)\n                                             AS used_percent,\n    ROUND(DECODE(df.autoextensible,'YES',df.maxbytes,df.bytes)\n         /1024/1024, 2)\n                                             AS max_size_mb,\n    df.autoextensible                        AS autoextend\nFROM dba_data_files df\nLEFT JOIN (\n    SELECT\n        file_id,\n        SUM(bytes) AS free_bytes\n    FROM dba_free_space\n    GROUP BY file_id\n) fs\nON df.file_id = fs.file_id\n\nORDER BY tablespace, row_type DESC, datafile;\n\nEXIT\nSQL\nEOF\n"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        144
+      ],
+      "id": "1eec62c3-129a-44b2-a14f-5ecd97888cd9",
+      "name": "APP-01 [TableSpace]",
+      "credentials": {
+        "sshPassword": {
+          "id": "REPLACE_ME",
+          "name": "ssh-app-01"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// รับ stdout จาก Execute Command\nconst stdout = $input.first().json.stdout || \"\";\n\n// timestamp สำหรับชื่อไฟล์\nconst now = new Date();\nconst ts =\n  now.getFullYear() + \"-\" +\n  String(now.getMonth() + 1).padStart(2, '0') + \"-\" +\n  String(now.getDate()).padStart(2, '0') + \"_\" +\n  String(now.getHours()).padStart(2, '0') + \"-\" +\n  String(now.getMinutes()).padStart(2, '0') + \"-\" +\n  String(now.getSeconds()).padStart(2, '0');\n\n// --------------------------------------------------\n// ฟังก์ชัน parse df -h\n// --------------------------------------------------\nfunction parseDfH(text) {\n  const lines = text.split(\"\\n\").map(l => l.trim()).filter(Boolean);\n\n  // ตัด header: \"Filesystem Size Used Avail Use% Mounted on\"\n  const dataLines = lines.slice(1);\n\n  const result = [];\n\n  let currentFs = null;\n\n  for (const line of dataLines) {\n    const parts = line.split(/\\s+/);\n\n    // กรณีบรรทัด FILESYSTEM แต่ไม่มีข้อมูลอื่น (split เป็น 1 ช่อง)\n    // เช่น \"/dev/mapper/vg_satien-lv_root\"\n    if (parts.length === 1 && parts[0].startsWith(\"/\")) {\n      currentFs = { filesystem: parts[0] };\n      continue;\n    }\n\n    // ถ้าบรรทัดข้อมูลต่อจาก FS\n    if (currentFs && parts.length >= 5) {\n      currentFs.size = parts[0];\n      currentFs.used = parts[1];\n      currentFs.avail = parts[2];\n      currentFs.use_percent = parts[3];\n      currentFs.mount = parts[4];\n      result.push(currentFs);\n      currentFs = null;\n      continue;\n    }\n\n    // บรรทัดปกติในรูปแบบเดียว เช่น\n    // tmpfs  32G  68K  32G  1% /dev/shm\n    if (parts.length >= 6) {\n      result.push({\n        filesystem: parts[0],\n        size: parts[1],\n        used: parts[2],\n        avail: parts[3],\n        use_percent: parts[4],\n        mount: parts[5]\n      });\n    }\n  }\n\n  return result;\n}\n\n// แปลง stdout → JSON\nconst parsed = parseDfH(stdout);\n\n// --------------------------------------------------\n// ส่งออก RAW + JSON + timestamp\n// --------------------------------------------------\nreturn [\n  {\n    json: {\n      timestamp: ts,\n      raw_stdout: stdout,   // ← RAW เก็บตรงนี้\n      parsed_df: parsed     // ← JSON structured\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        720
+      ],
+      "id": "e0a826a6-ef75-4b7e-9455-2390bd89f02e",
+      "name": "Format df -h5",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1568,
+        2640
+      ],
+      "id": "524c3031-d347-4515-840e-4d789e873f2e",
+      "name": "Respond (APP-01)"
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true,
+          "fileName": "=df_{{$json.timestamp}}.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        896
+      ],
+      "id": "f25d4714-1085-4c7c-aa0f-9d76719e8317",
+      "name": "Convert to json8",
+      "alwaysOutputData": false
+    }
+  ],
+  "connections": {
+    "Format top": {
+      "main": [
+        [
+          {
+            "node": "Convert to json",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to text": {
+      "main": [
+        [
+          {
+            "node": "Merge9",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to json": {
+      "main": [
+        [
+          {
+            "node": "Merge10",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Json": {
+      "main": [
+        [
+          {
+            "node": "Merge (DB-01)",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Save Text": {
+      "main": [
+        [
+          {
+            "node": "Merge (DB-01)",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Format df -h": {
+      "main": [
+        [
+          {
+            "node": "Convert to text1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to json1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to text1": {
+      "main": [
+        [
+          {
+            "node": "Merge11",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to json1": {
+      "main": [
+        [
+          {
+            "node": "Merge12",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command11",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Text1": {
+      "main": [
+        [
+          {
+            "node": "Merge (DB-01)",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Save Json1": {
+      "main": [
+        [
+          {
+            "node": "Merge (DB-01)",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Format top1": {
+      "main": [
+        [
+          {
+            "node": "Convert to json2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to text2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to text2": {
+      "main": [
+        [
+          {
+            "node": "Merge13",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command12",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to json2": {
+      "main": [
+        [
+          {
+            "node": "Merge14",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command13",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Json2": {
+      "main": [
+        [
+          {
+            "node": "Merge (DOCS-01)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Save Text2": {
+      "main": [
+        [
+          {
+            "node": "Merge (DOCS-01)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format df -h1": {
+      "main": [
+        [
+          {
+            "node": "Convert to text3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to json3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to text3": {
+      "main": [
+        [
+          {
+            "node": "Merge15",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command14",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to json3": {
+      "main": [
+        [
+          {
+            "node": "Merge16",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command15",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Text3": {
+      "main": [
+        [
+          {
+            "node": "Merge (DOCS-01)",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Save Json3": {
+      "main": [
+        [
+          {
+            "node": "Merge (DOCS-01)",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Format top2": {
+      "main": [
+        [
+          {
+            "node": "Convert to json4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to text4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to text4": {
+      "main": [
+        [
+          {
+            "node": "Merge17",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command16",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to json4": {
+      "main": [
+        [
+          {
+            "node": "Merge18",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command17",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Json4": {
+      "main": [
+        [
+          {
+            "node": "Merge (Service desk plus)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Save Text4": {
+      "main": [
+        [
+          {
+            "node": "Merge (Service desk plus)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format df -h2": {
+      "main": [
+        [
+          {
+            "node": "Convert to text5",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to json5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to text5": {
+      "main": [
+        [
+          {
+            "node": "Merge19",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command18",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to json5": {
+      "main": [
+        [
+          {
+            "node": "Merge20",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command19",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Text5": {
+      "main": [
+        [
+          {
+            "node": "Merge (Service desk plus)",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Save Json5": {
+      "main": [
+        [
+          {
+            "node": "Merge (Service desk plus)",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Format top3": {
+      "main": [
+        [
+          {
+            "node": "Convert to json6",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to text6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to text6": {
+      "main": [
+        [
+          {
+            "node": "Merge21",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command20",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to json6": {
+      "main": [
+        [
+          {
+            "node": "Merge22",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command21",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Json6": {
+      "main": [
+        [
+          {
+            "node": "Merge (New service desk plus)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Save Text6": {
+      "main": [
+        [
+          {
+            "node": "Merge (New service desk plus)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format df -h3": {
+      "main": [
+        [
+          {
+            "node": "Convert to text7",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to json7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to text7": {
+      "main": [
+        [
+          {
+            "node": "Merge23",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command22",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to json7": {
+      "main": [
+        [
+          {
+            "node": "Merge24",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command23",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Text7": {
+      "main": [
+        [
+          {
+            "node": "Merge (New service desk plus)",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Save Json7": {
+      "main": [
+        [
+          {
+            "node": "Merge (New service desk plus)",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Respond (DB-01)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Respond (DOCS-01)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Respond (ALL)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Respond (HELPDESK-01)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields4": {
+      "main": [
+        [
+          {
+            "node": "Respond (HELPDESK-02)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge (ALL)",
+            "type": "main",
+            "index": 4
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge (DB-01)": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge (ALL)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge (DOCS-01)": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge (ALL)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge (Service desk plus)": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge (ALL)",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge (New service desk plus)": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge (ALL)",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Merge (ALL)": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to text10": {
+      "main": [
+        [
+          {
+            "node": "Execute Command4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Text10": {
+      "main": [
+        [
+          {
+            "node": "Merge (APP-01)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Json10": {
+      "main": [
+        [
+          {
+            "node": "Merge (APP-01)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Edit Fields5": {
+      "main": [
+        [
+          {
+            "node": "Respond (APP-01)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format top4": {
+      "main": [
+        [
+          {
+            "node": "Convert to json9",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to text9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to text9": {
+      "main": [
+        [
+          {
+            "node": "Merge7",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to json9": {
+      "main": [
+        [
+          {
+            "node": "Merge8",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Json9": {
+      "main": [
+        [
+          {
+            "node": "Merge (APP-01)",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Save Text9": {
+      "main": [
+        [
+          {
+            "node": "Merge (APP-01)",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Format tablespace": {
+      "main": [
+        [
+          {
+            "node": "Convert to text11",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to json11",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to text11": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to json11": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Text11": {
+      "main": [
+        [
+          {
+            "node": "Merge (APP-01)",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Save Json11": {
+      "main": [
+        [
+          {
+            "node": "Merge (APP-01)",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Format tablespace1": {
+      "main": [
+        [
+          {
+            "node": "Convert to text12",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to json12",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to text12": {
+      "main": [
+        [
+          {
+            "node": "Execute Command",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to json12": {
+      "main": [
+        [
+          {
+            "node": "Execute Command1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Text12": {
+      "main": [
+        [
+          {
+            "node": "Merge (DB-01)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Json12": {
+      "main": [
+        [
+          {
+            "node": "Merge (DB-01)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge (APP-01)": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge (ALL)",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Execute Command": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Save Text12",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Save Json12",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command2": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Save Text11",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command3": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge4": {
+      "main": [
+        [
+          {
+            "node": "Save Json11",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command4": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge5": {
+      "main": [
+        [
+          {
+            "node": "Save Text10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command5": {
+      "main": [
+        [
+          {
+            "node": "Merge6",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge6": {
+      "main": [
+        [
+          {
+            "node": "Save Json10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command6": {
+      "main": [
+        [
+          {
+            "node": "Merge7",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge7": {
+      "main": [
+        [
+          {
+            "node": "Save Text9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command7": {
+      "main": [
+        [
+          {
+            "node": "Merge8",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge8": {
+      "main": [
+        [
+          {
+            "node": "Save Json9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command8": {
+      "main": [
+        [
+          {
+            "node": "Merge9",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge9": {
+      "main": [
+        [
+          {
+            "node": "Save Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command9": {
+      "main": [
+        [
+          {
+            "node": "Merge10",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge10": {
+      "main": [
+        [
+          {
+            "node": "Save Json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command10": {
+      "main": [
+        [
+          {
+            "node": "Merge11",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge11": {
+      "main": [
+        [
+          {
+            "node": "Save Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command11": {
+      "main": [
+        [
+          {
+            "node": "Merge12",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge12": {
+      "main": [
+        [
+          {
+            "node": "Save Json1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command12": {
+      "main": [
+        [
+          {
+            "node": "Merge13",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Execute Command13": {
+      "main": [
+        [
+          {
+            "node": "Merge14",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge13": {
+      "main": [
+        [
+          {
+            "node": "Save Text2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge14": {
+      "main": [
+        [
+          {
+            "node": "Save Json2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command14": {
+      "main": [
+        [
+          {
+            "node": "Merge15",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge15": {
+      "main": [
+        [
+          {
+            "node": "Save Text3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command15": {
+      "main": [
+        [
+          {
+            "node": "Merge16",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge16": {
+      "main": [
+        [
+          {
+            "node": "Save Json3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command16": {
+      "main": [
+        [
+          {
+            "node": "Merge17",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge17": {
+      "main": [
+        [
+          {
+            "node": "Save Text4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command17": {
+      "main": [
+        [
+          {
+            "node": "Merge18",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge18": {
+      "main": [
+        [
+          {
+            "node": "Save Json4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command18": {
+      "main": [
+        [
+          {
+            "node": "Merge19",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Execute Command19": {
+      "main": [
+        [
+          {
+            "node": "Merge20",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge19": {
+      "main": [
+        [
+          {
+            "node": "Save Text5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge20": {
+      "main": [
+        [
+          {
+            "node": "Save Json5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command20": {
+      "main": [
+        [
+          {
+            "node": "Merge21",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge21": {
+      "main": [
+        [
+          {
+            "node": "Save Text6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command21": {
+      "main": [
+        [
+          {
+            "node": "Merge22",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge22": {
+      "main": [
+        [
+          {
+            "node": "Save Json6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command22": {
+      "main": [
+        [
+          {
+            "node": "Merge23",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Execute Command23": {
+      "main": [
+        [
+          {
+            "node": "Merge24",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge23": {
+      "main": [
+        [
+          {
+            "node": "Save Text7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge24": {
+      "main": [
+        [
+          {
+            "node": "Save Json7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Refresh Data": {
+      "main": [
+        [
+          {
+            "node": "Switch Server",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Server": {
+      "main": [
+        [
+          {
+            "node": "DB-01 [top]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "DB-01 [df -h]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "DOCS-01 [top]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "DOCS-01 [df -h]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HELPDESK-01 [top]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HELPDESK-01 [df -h]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HELPDESK-02 [top]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HELPDESK-02 [df -h]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "DB-01 [TableSpace]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "APP-01 [TableSpace]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "APP-01 [df -h]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "APP-01 [top]",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "DB-01 [top]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "DB-01 [df -h]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "DB-01 [TableSpace]",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "DOCS-01 [top]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "DOCS-01 [df -h]",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HELPDESK-01 [top]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HELPDESK-01 [df -h]",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HELPDESK-02 [top]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HELPDESK-02 [df -h]",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "APP-01 [top]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "APP-01 [df -h]",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "APP-01 [TableSpace]",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HELPDESK-02 [df -h]": {
+      "main": [
+        [
+          {
+            "node": "Format df -h3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HELPDESK-02 [top]": {
+      "main": [
+        [
+          {
+            "node": "Format top3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HELPDESK-01 [df -h]": {
+      "main": [
+        [
+          {
+            "node": "Format df -h2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HELPDESK-01 [top]": {
+      "main": [
+        [
+          {
+            "node": "Format top2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DOCS-01 [df -h]": {
+      "main": [
+        [
+          {
+            "node": "Format df -h1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DOCS-01 [top]": {
+      "main": [
+        [
+          {
+            "node": "Format top1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB-01 [df -h]": {
+      "main": [
+        [
+          {
+            "node": "Format df -h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB-01 [top]": {
+      "main": [
+        [
+          {
+            "node": "Format top",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB-01 [TableSpace]": {
+      "main": [
+        [
+          {
+            "node": "Format tablespace1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "APP-01 [top]": {
+      "main": [
+        [
+          {
+            "node": "Format top4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "APP-01 [df -h]": {
+      "main": [
+        [
+          {
+            "node": "Format df -h5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "APP-01 [TableSpace]": {
+      "main": [
+        [
+          {
+            "node": "Format tablespace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format df -h5": {
+      "main": [
+        [
+          {
+            "node": "Convert to text10",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to json8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to json8": {
+      "main": [
+        [
+          {
+            "node": "Execute Command5",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

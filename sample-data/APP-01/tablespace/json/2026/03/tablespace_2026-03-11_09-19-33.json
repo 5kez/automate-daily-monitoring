@@ -1,0 +1,90 @@
+{
+  "timestamp": "2026-03-11_09-19-33",
+  "tablespaces": [
+    {
+      "tablespace_name": "SYSAUX",
+      "summary": {
+        "current_size_mb": 1220,
+        "used_mb": 1097.81,
+        "free_mb": 122.19,
+        "used_percent": 89.98,
+        "max_size_mb": 32767.98
+      },
+      "datafiles": [
+        {
+          "datafile_name": "/ERPP/DATA/EBSTEST/sysaux01.dbf",
+          "current_size_mb": 1220,
+          "used_mb": 1097.81,
+          "free_mb": 122.19,
+          "used_percent": 89.98,
+          "max_size_mb": 32767.98,
+          "autoextend": "YES"
+        }
+      ]
+    },
+    {
+      "tablespace_name": "SYSTEM",
+      "summary": {
+        "current_size_mb": 1210,
+        "used_mb": 1205.81,
+        "free_mb": 4.19,
+        "used_percent": 99.65,
+        "max_size_mb": 32767.98
+      },
+      "datafiles": [
+        {
+          "datafile_name": "/ERPP/DATA/EBSTEST/system01.dbf",
+          "current_size_mb": 1210,
+          "used_mb": 1205.81,
+          "free_mb": 4.19,
+          "used_percent": 99.65,
+          "max_size_mb": 32767.98,
+          "autoextend": "YES"
+        }
+      ]
+    },
+    {
+      "tablespace_name": "UNDOTBS1",
+      "summary": {
+        "current_size_mb": 955,
+        "used_mb": 27.25,
+        "free_mb": 927.75,
+        "used_percent": 2.85,
+        "max_size_mb": 32767.98
+      },
+      "datafiles": [
+        {
+          "datafile_name": "/ERPP/DATA/EBSTEST/undotbs01.dbf",
+          "current_size_mb": 955,
+          "used_mb": 27.25,
+          "free_mb": 927.75,
+          "used_percent": 2.85,
+          "max_size_mb": 32767.98,
+          "autoextend": "YES"
+        }
+      ]
+    },
+    {
+      "tablespace_name": "USERS",
+      "summary": {
+        "current_size_mb": 8,
+        "used_mb": 6.94,
+        "free_mb": 1.06,
+        "used_percent": 86.72,
+        "max_size_mb": 32767.98
+      },
+      "datafiles": [
+        {
+          "datafile_name": "/ERPP/DATA/EBSTEST/users01.dbf",
+          "current_size_mb": 8,
+          "used_mb": 6.94,
+          "free_mb": 1.06,
+          "used_percent": 86.72,
+          "max_size_mb": 32767.98,
+          "autoextend": "YES"
+        }
+      ]
+    }
+  ],
+  "raw_stdout": "(raw command output removed from the public sample)"
+}

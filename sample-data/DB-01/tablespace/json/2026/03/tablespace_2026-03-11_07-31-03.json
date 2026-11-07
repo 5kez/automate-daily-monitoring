@@ -1,0 +1,132 @@
+{
+  "timestamp": "2026-03-11_07-31-03",
+  "tablespaces": [
+    {
+      "tablespace_name": "APEX",
+      "summary": {
+        "current_size_mb": 800,
+        "used_mb": 623.19,
+        "free_mb": 176.81,
+        "used_percent": 77.9,
+        "max_size_mb": 32767.98
+      },
+      "datafiles": [
+        {
+          "datafile_name": "/u01/app/oracle/oradata/ads/APEX.dbf",
+          "current_size_mb": 800,
+          "used_mb": 623.19,
+          "free_mb": 176.81,
+          "used_percent": 77.9,
+          "max_size_mb": 32767.98,
+          "autoextend": "YES"
+        }
+      ]
+    },
+    {
+      "tablespace_name": "APEX_2223414425809880",
+      "summary": {
+        "current_size_mb": 4130,
+        "used_mb": 3892.81,
+        "free_mb": 237.19,
+        "used_percent": 94.26,
+        "max_size_mb": 32767.98
+      },
+      "datafiles": [
+        {
+          "datafile_name": "/u01/app/oracle/oradata/ads/APEX_2223414425809880.dbf",
+          "current_size_mb": 4130,
+          "used_mb": 3892.81,
+          "free_mb": 237.19,
+          "used_percent": 94.26,
+          "max_size_mb": 32767.98,
+          "autoextend": "YES"
+        }
+      ]
+    },
+    {
+      "tablespace_name": "SYSAUX",
+      "summary": {
+        "current_size_mb": 2820,
+        "used_mb": 2677.75,
+        "free_mb": 142.25,
+        "used_percent": 94.96,
+        "max_size_mb": 32767.98
+      },
+      "datafiles": [
+        {
+          "datafile_name": "/u01/app/oracle/oradata/ads/sysaux01.dbf",
+          "current_size_mb": 2820,
+          "used_mb": 2677.75,
+          "free_mb": 142.25,
+          "used_percent": 94.96,
+          "max_size_mb": 32767.98,
+          "autoextend": "YES"
+        }
+      ]
+    },
+    {
+      "tablespace_name": "SYSTEM",
+      "summary": {
+        "current_size_mb": 1010,
+        "used_mb": 802.63,
+        "free_mb": 207.38,
+        "used_percent": 79.47,
+        "max_size_mb": 32767.98
+      },
+      "datafiles": [
+        {
+          "datafile_name": "/u01/app/oracle/oradata/ads/system01.dbf",
+          "current_size_mb": 1010,
+          "used_mb": 802.63,
+          "free_mb": 207.38,
+          "used_percent": 79.47,
+          "max_size_mb": 32767.98,
+          "autoextend": "YES"
+        }
+      ]
+    },
+    {
+      "tablespace_name": "UNDOTBS1",
+      "summary": {
+        "current_size_mb": 1065,
+        "used_mb": 101.38,
+        "free_mb": 963.63,
+        "used_percent": 9.52,
+        "max_size_mb": 32767.98
+      },
+      "datafiles": [
+        {
+          "datafile_name": "/u01/app/oracle/oradata/ads/undotbs01.dbf",
+          "current_size_mb": 1065,
+          "used_mb": 101.38,
+          "free_mb": 963.63,
+          "used_percent": 9.52,
+          "max_size_mb": 32767.98,
+          "autoextend": "YES"
+        }
+      ]
+    },
+    {
+      "tablespace_name": "USERS",
+      "summary": {
+        "current_size_mb": 5,
+        "used_mb": 1.75,
+        "free_mb": 3.25,
+        "used_percent": 35,
+        "max_size_mb": 32767.98
+      },
+      "datafiles": [
+        {
+          "datafile_name": "/u01/app/oracle/oradata/ads/users01.dbf",
+          "current_size_mb": 5,
+          "used_mb": 1.75,
+          "free_mb": 3.25,
+          "used_percent": 35,
+          "max_size_mb": 32767.98,
+          "autoextend": "YES"
+        }
+      ]
+    }
+  ],
+  "raw_stdout": "(raw command output removed from the public sample)"
+}

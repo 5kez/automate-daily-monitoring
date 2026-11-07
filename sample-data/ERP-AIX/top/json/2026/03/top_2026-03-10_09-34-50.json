@@ -1,0 +1,198 @@
+{
+  "timestamp": "2026-03-10_09-34-50",
+  "log_type": "AIX_MONITORING",
+  "parsed_data": {
+    "system": {
+      "hostname": "aix-erp-01",
+      "timestamp": "09:33:03 10-03-2026"
+    },
+    "cpu_lpar": {
+      "physc": "0.03",
+      "entc": "1.3",
+      "user_pct": "0.5",
+      "kern_pct": "0.4",
+      "wait_pct": "0.0",
+      "idle_pct": "99.1"
+    },
+    "memory": {
+      "total_mb": "24576",
+      "free_ram_mb": "82",
+      "free_pct": "0.3"
+    },
+    "paging": {
+      "size_mb": "24576",
+      "used_pct": "1%",
+      "faults": "173623945457"
+    },
+    "disks": [
+      {
+        "device": "hdisk2",
+        "busy_pct": "0.0%",
+        "kbps": "0.0"
+      },
+      {
+        "device": "hdisk1",
+        "busy_pct": "4.0%",
+        "kbps": "19.9"
+      },
+      {
+        "device": "hdisk0",
+        "busy_pct": "4.0%",
+        "kbps": "143.3"
+      },
+      {
+        "device": "cd0",
+        "busy_pct": "0.0%",
+        "kbps": "0.0"
+      },
+      {
+        "device": "cd1",
+        "busy_pct": "0.0%",
+        "kbps": "0.0"
+      }
+    ],
+    "processes": [
+      {
+        "pid": "5681284",
+        "cpu_pct": "1.4",
+        "size_mb": "14.8",
+        "owner": "oraerp",
+        "command": "oracle"
+      },
+      {
+        "pid": "1200256",
+        "cpu_pct": "0.5",
+        "size_mb": "21.9",
+        "owner": "oraerp",
+        "command": "oracle"
+      },
+      {
+        "pid": "5751020",
+        "cpu_pct": "0.4",
+        "size_mb": "10.9",
+        "owner": "oraerp",
+        "command": "oracle"
+      },
+      {
+        "pid": "6176868",
+        "cpu_pct": "0.2",
+        "size_mb": "34.2",
+        "owner": "oraerp",
+        "command": "oracle"
+      },
+      {
+        "pid": "6164506",
+        "cpu_pct": "0.2",
+        "size_mb": "6.3",
+        "owner": "oraerp",
+        "command": "oracle"
+      },
+      {
+        "pid": "5435424",
+        "cpu_pct": "0.2",
+        "size_mb": "29.0",
+        "owner": "applerp",
+        "command": "f60webmx"
+      },
+      {
+        "pid": "7299082",
+        "cpu_pct": "0.1",
+        "size_mb": "34.5",
+        "owner": "applerp",
+        "command": "f60webmx"
+      },
+      {
+        "pid": "7221394",
+        "cpu_pct": "0.1",
+        "size_mb": "17.4",
+        "owner": "applerp",
+        "command": "f60webmx"
+      },
+      {
+        "pid": "6807610",
+        "cpu_pct": "0.1",
+        "size_mb": "153.8",
+        "owner": "applerp",
+        "command": "f60webmx"
+      },
+      {
+        "pid": "6578190",
+        "cpu_pct": "0.1",
+        "size_mb": "21.9",
+        "owner": "applerp",
+        "command": "f60webmx"
+      },
+      {
+        "pid": "6422616",
+        "cpu_pct": "0.1",
+        "size_mb": "38.8",
+        "owner": "applerp",
+        "command": "f60webmx"
+      },
+      {
+        "pid": "6369432",
+        "cpu_pct": "0.1",
+        "size_mb": "29.7",
+        "owner": "applerp",
+        "command": "f60webmx"
+      },
+      {
+        "pid": "6324372",
+        "cpu_pct": "0.1",
+        "size_mb": "51.6",
+        "owner": "oraerp",
+        "command": "oracle"
+      },
+      {
+        "pid": "6311966",
+        "cpu_pct": "0.1",
+        "size_mb": "12.3",
+        "owner": "oraerp",
+        "command": "oracle"
+      },
+      {
+        "pid": "6217728",
+        "cpu_pct": "0.1",
+        "size_mb": "17.5",
+        "owner": "applerp",
+        "command": "f60webmx"
+      },
+      {
+        "pid": "5701732",
+        "cpu_pct": "0.1",
+        "size_mb": "11.4",
+        "owner": "oraerp",
+        "command": "oracle"
+      },
+      {
+        "pid": "5660810",
+        "cpu_pct": "0.1",
+        "size_mb": "18.2",
+        "owner": "oraerp",
+        "command": "oracle"
+      },
+      {
+        "pid": "5599310",
+        "cpu_pct": "0.1",
+        "size_mb": "31.9",
+        "owner": "applerp",
+        "command": "f60webmx"
+      },
+      {
+        "pid": "5566564",
+        "cpu_pct": "0.1",
+        "size_mb": "22.8",
+        "owner": "applerp",
+        "command": "f60webmx"
+      },
+      {
+        "pid": "1409252",
+        "cpu_pct": "0.1",
+        "size_mb": "9.9",
+        "owner": "oraerp",
+        "command": "oracle"
+      }
+    ]
+  },
+  "raw_stdout": "(raw command output removed from the public sample)"
+}

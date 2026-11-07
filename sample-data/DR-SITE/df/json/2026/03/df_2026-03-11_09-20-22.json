@@ -1,0 +1,94 @@
+{
+  "timestamp": "2026-03-11_09-20-22",
+  "raw_stdout": "(raw command output removed from the public sample)",
+  "parsed_df": [
+    {
+      "filesystem": "/dev/hd4",
+      "size": "52.00",
+      "used": "0.83",
+      "avail": "51.17",
+      "use_percent": "2%",
+      "mount": "/"
+    },
+    {
+      "filesystem": "/dev/hd2",
+      "size": "5.00",
+      "used": "4.21",
+      "avail": "0.79",
+      "use_percent": "85%",
+      "mount": "/usr"
+    },
+    {
+      "filesystem": "/dev/hd9var",
+      "size": "2.00",
+      "used": "0.49",
+      "avail": "1.51",
+      "use_percent": "25%",
+      "mount": "/var"
+    },
+    {
+      "filesystem": "/dev/hd3",
+      "size": "10.00",
+      "used": "2.37",
+      "avail": "7.63",
+      "use_percent": "24%",
+      "mount": "/tmp"
+    },
+    {
+      "filesystem": "/dev/hd1",
+      "size": "2.00",
+      "used": "0.87",
+      "avail": "1.13",
+      "use_percent": "44%",
+      "mount": "/home"
+    },
+    {
+      "filesystem": "/dev/hd11admin",
+      "size": "0.12",
+      "used": "0.00",
+      "avail": "0.12",
+      "use_percent": "1%",
+      "mount": "/admin"
+    },
+    {
+      "filesystem": "/proc",
+      "size": "-",
+      "used": "-",
+      "avail": "-",
+      "use_percent": "-",
+      "mount": "/proc"
+    },
+    {
+      "filesystem": "/dev/hd10opt",
+      "size": "2.00",
+      "used": "0.89",
+      "avail": "1.11",
+      "use_percent": "45%",
+      "mount": "/opt"
+    },
+    {
+      "filesystem": "/dev/livedump",
+      "size": "0.25",
+      "used": "0.00",
+      "avail": "0.25",
+      "use_percent": "1%",
+      "mount": "/var/adm/ras/livedump"
+    },
+    {
+      "filesystem": "/dev/datalv",
+      "size": "1000.00",
+      "used": "848.48",
+      "avail": "151.52",
+      "use_percent": "85%",
+      "mount": "/u01"
+    },
+    {
+      "filesystem": "/ahafs",
+      "size": "-",
+      "used": "-",
+      "avail": "-",
+      "use_percent": "-",
+      "mount": "/aha"
+    }
+  ]
+}
