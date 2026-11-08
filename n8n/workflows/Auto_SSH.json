@@ -1019,7 +1019,7 @@
         4880
       ],
       "id": "d22776df-aac3-440d-a27e-067f09aeddd5",
-      "name": "Merge (Service desk plus)"
+      "name": "Merge (HELPDESK-01)"
     },
     {
       "parameters": {
@@ -1033,7 +1033,7 @@
         6032
       ],
       "id": "f7c9af0c-b967-42c8-9aae-43dd6a770685",
-      "name": "Merge (New service desk plus)"
+      "name": "Merge (HELPDESK-02)"
     },
     {
       "parameters": {
@@ -1907,7 +1907,7 @@
     {
       "parameters": {
         "executeOnce": false,
-        "command": "mkdir -p /data/monitor/log/Service\\ Desk\\ Plus/top/raw/$(date +%Y/%m)"
+        "command": "mkdir -p /data/monitor/log/HELPDESK-01/top/raw/$(date +%Y/%m)"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
@@ -1934,7 +1934,7 @@
     {
       "parameters": {
         "executeOnce": false,
-        "command": "mkdir -p /data/monitor/log/Service\\ Desk\\ Plus/top/json/$(date +%Y/%m)"
+        "command": "mkdir -p /data/monitor/log/HELPDESK-01/top/json/$(date +%Y/%m)"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
@@ -1961,7 +1961,7 @@
     {
       "parameters": {
         "executeOnce": false,
-        "command": "mkdir -p /data/monitor/log/Service\\ Desk\\ Plus/df/raw/$(date +%Y/%m)"
+        "command": "mkdir -p /data/monitor/log/HELPDESK-01/df/raw/$(date +%Y/%m)"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
@@ -1988,7 +1988,7 @@
     {
       "parameters": {
         "executeOnce": false,
-        "command": "mkdir -p /data/monitor/log/Service\\ Desk\\ Plus/df/json/$(date +%Y/%m)"
+        "command": "mkdir -p /data/monitor/log/HELPDESK-01/df/json/$(date +%Y/%m)"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
@@ -2015,7 +2015,7 @@
     {
       "parameters": {
         "executeOnce": false,
-        "command": "mkdir -p /data/monitor/log/New\\ Service\\ Desk\\ Plus/top/raw/$(date +%Y/%m)"
+        "command": "mkdir -p /data/monitor/log/HELPDESK-02/top/raw/$(date +%Y/%m)"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
@@ -2042,7 +2042,7 @@
     {
       "parameters": {
         "executeOnce": false,
-        "command": "mkdir -p /data/monitor/log/New\\ Service\\ Desk\\ Plus/top/json/$(date +%Y/%m)"
+        "command": "mkdir -p /data/monitor/log/HELPDESK-02/top/json/$(date +%Y/%m)"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
@@ -2069,7 +2069,7 @@
     {
       "parameters": {
         "executeOnce": false,
-        "command": "mkdir -p /data/monitor/log/New\\ Service\\ Desk\\ Plus/df/raw/$(date +%Y/%m)"
+        "command": "mkdir -p /data/monitor/log/HELPDESK-02/df/raw/$(date +%Y/%m)"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
@@ -2096,7 +2096,7 @@
     {
       "parameters": {
         "executeOnce": false,
-        "command": "mkdir -p /data/monitor/log/New\\ Service\\ Desk\\ Plus/df/json/$(date +%Y/%m)"
+        "command": "mkdir -p /data/monitor/log/HELPDESK-02/df/json/$(date +%Y/%m)"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
@@ -2901,7 +2901,7 @@
       "main": [
         [
           {
-            "node": "Merge (Service desk plus)",
+            "node": "Merge (HELPDESK-01)",
             "type": "main",
             "index": 1
           }
@@ -2912,7 +2912,7 @@
       "main": [
         [
           {
-            "node": "Merge (Service desk plus)",
+            "node": "Merge (HELPDESK-01)",
             "type": "main",
             "index": 0
           }
@@ -2971,7 +2971,7 @@
       "main": [
         [
           {
-            "node": "Merge (Service desk plus)",
+            "node": "Merge (HELPDESK-01)",
             "type": "main",
             "index": 2
           }
@@ -2982,7 +2982,7 @@
       "main": [
         [
           {
-            "node": "Merge (Service desk plus)",
+            "node": "Merge (HELPDESK-01)",
             "type": "main",
             "index": 3
           }
@@ -3041,7 +3041,7 @@
       "main": [
         [
           {
-            "node": "Merge (New service desk plus)",
+            "node": "Merge (HELPDESK-02)",
             "type": "main",
             "index": 1
           }
@@ -3052,7 +3052,7 @@
       "main": [
         [
           {
-            "node": "Merge (New service desk plus)",
+            "node": "Merge (HELPDESK-02)",
             "type": "main",
             "index": 0
           }
@@ -3111,7 +3111,7 @@
       "main": [
         [
           {
-            "node": "Merge (New service desk plus)",
+            "node": "Merge (HELPDESK-02)",
             "type": "main",
             "index": 2
           }
@@ -3122,7 +3122,7 @@
       "main": [
         [
           {
-            "node": "Merge (New service desk plus)",
+            "node": "Merge (HELPDESK-02)",
             "type": "main",
             "index": 3
           }
@@ -3262,7 +3262,7 @@
         ]
       ]
     },
-    "Merge (Service desk plus)": {
+    "Merge (HELPDESK-01)": {
       "main": [
         [
           {
@@ -3278,7 +3278,7 @@
         ]
       ]
     },
-    "Merge (New service desk plus)": {
+    "Merge (HELPDESK-02)": {
       "main": [
         [
           {

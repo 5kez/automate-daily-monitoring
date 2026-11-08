@@ -24,7 +24,7 @@
       "used": "289G",
       "avail": "48G",
       "use_percent": "86%",
-      "mount": "/alfresco"
+      "mount": "/docstore"
     },
     {
       "filesystem": "/dev/sda1",

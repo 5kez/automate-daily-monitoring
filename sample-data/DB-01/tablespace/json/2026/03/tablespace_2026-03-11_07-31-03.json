@@ -12,7 +12,7 @@
       },
       "datafiles": [
         {
-          "datafile_name": "/u01/app/oracle/oradata/ads/APEX.dbf",
+          "datafile_name": "/u01/app/oracle/oradata/orcl/APEX.dbf",
           "current_size_mb": 800,
           "used_mb": 623.19,
           "free_mb": 176.81,
@@ -33,7 +33,7 @@
       },
       "datafiles": [
         {
-          "datafile_name": "/u01/app/oracle/oradata/ads/APEX_2223414425809880.dbf",
+          "datafile_name": "/u01/app/oracle/oradata/orcl/APEX_2223414425809880.dbf",
           "current_size_mb": 4130,
           "used_mb": 3892.81,
           "free_mb": 237.19,
@@ -54,7 +54,7 @@
       },
       "datafiles": [
         {
-          "datafile_name": "/u01/app/oracle/oradata/ads/sysaux01.dbf",
+          "datafile_name": "/u01/app/oracle/oradata/orcl/sysaux01.dbf",
           "current_size_mb": 2820,
           "used_mb": 2677.75,
           "free_mb": 142.25,
@@ -75,7 +75,7 @@
       },
       "datafiles": [
         {
-          "datafile_name": "/u01/app/oracle/oradata/ads/system01.dbf",
+          "datafile_name": "/u01/app/oracle/oradata/orcl/system01.dbf",
           "current_size_mb": 1010,
           "used_mb": 802.63,
           "free_mb": 207.38,
@@ -96,7 +96,7 @@
       },
       "datafiles": [
         {
-          "datafile_name": "/u01/app/oracle/oradata/ads/undotbs01.dbf",
+          "datafile_name": "/u01/app/oracle/oradata/orcl/undotbs01.dbf",
           "current_size_mb": 1065,
           "used_mb": 101.38,
           "free_mb": 963.63,
@@ -117,7 +117,7 @@
       },
       "datafiles": [
         {
-          "datafile_name": "/u01/app/oracle/oradata/ads/users01.dbf",
+          "datafile_name": "/u01/app/oracle/oradata/orcl/users01.dbf",
           "current_size_mb": 5,
           "used_mb": 1.75,
           "free_mb": 3.25,
