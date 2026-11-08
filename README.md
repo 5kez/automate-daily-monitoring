@@ -34,12 +34,12 @@ flowchart LR
 
 ## What is in this repo
 
+The n8n backend (workflows, the custom AIX node and its Docker Compose setup) lives in its own repo: **[5kez/n8n-server-monitoring](https://github.com/5kez/n8n-server-monitoring)**.
+
 | Path | What |
 |---|---|
-| `n8n/workflows/` | Exported n8n workflows: Auto SSH (146 nodes), webhook file API, Auto tuning, Daily Schedule |
-| `n8n/custom-nodes/n8n-nodes-aix/` | Custom n8n node in TypeScript (ssh2) that captures non-interactive AIX `topas` output, which the built-in SSH node could not do |
 | `dashboard/` | React 18 + Vite dashboard (Recharts, jsPDF), ESLint + Prettier, multi-stage Dockerfile with Nginx |
-| `deploy/` | Docker Compose for n8n behind an Nginx reverse proxy, and the GitHub Actions deploy workflow (self-hosted Windows runner) |
+| `deploy/` | Example GitHub Actions workflow that rebuilds and redeploys the dashboard container on a self-hosted Windows runner |
 | `docs/` | System documentation, API reference, flow diagrams |
 | `sample-data/` | Anonymized sample outputs used by the demo |
 
@@ -53,13 +53,7 @@ python3 scripts-make-demo-data.py      # builds public/demo-data from ../sample-
 VITE_DEMO=true npm run dev              # http://localhost:3000
 ```
 
-**Full stack:**
-```bash
-cd deploy
-echo "N8N_ENCRYPTION_KEY=$(openssl rand -hex 24)" > .env
-docker compose up -d                    # n8n on :5678 behind Nginx
-```
-Then import `n8n/workflows/*.json` in n8n, create one SSH credential per server (the exported credentials are placeholders named `REPLACE_ME`), and point the dashboard at n8n with `VITE_API_WEBHOOK_HOST`.
+**Full stack:** start the n8n backend by following [n8n-server-monitoring](https://github.com/5kez/n8n-server-monitoring#run-it), then point the dashboard at it with `VITE_API_WEBHOOK_HOST`.
 
 ## Anonymization
 
@@ -74,4 +68,4 @@ n8n · Docker · Docker Compose · Nginx · GitHub Actions · SSH / SSL VPN · L
 
 ## Author
 
-Tham Kaeoket · [skez.codes](https://skez.codes) · [github.com/5kez](https://github.com/5kez)
+Tham Kaeoket · [skez.codes](https://skez.codes) · [LinkedIn](https://www.linkedin.com/in/tham-kaeoket/) · [github.com/5kez](https://github.com/5kez)
