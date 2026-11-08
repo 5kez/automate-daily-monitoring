@@ -1,10 +1,10 @@
-# 🔌 API Reference & Backend Integration Guide
+# API Reference & Backend Integration Guide
 
 **Complete Backend API Documentation**
 
 ---
 
-## 📍 Base URL
+## Base URL
 
 ```
 http://n8n.local:5678/webhook/api/v1
@@ -12,7 +12,7 @@ http://n8n.local:5678/webhook/api/v1
 
 ---
 
-## 1️⃣ List Files Endpoint
+## 1. List Files Endpoint
 
 ### Purpose
 Get list of available monitoring data files for a specific server and monitoring type
@@ -162,7 +162,7 @@ const files = await fetchFilesList('ERP-AIX', 'errpt_more');
 
 ---
 
-## 2️⃣ Get File Data Endpoint
+## 2. Get File Data Endpoint
 
 ### Purpose
 Retrieve complete JSON data for a specific monitoring file
@@ -389,7 +389,7 @@ const fileData = await getFileData(
 
 ---
 
-## 🚨 Common Errors & Solutions
+## Common Errors & Solutions
 
 ### Error 1: Invalid Table Name
 
@@ -406,12 +406,12 @@ Response: 500 {"message":"Error in workflow"}
 
 **Solution:**
 ```javascript
-// ❌ WRONG:
+// WRONG:
 fetchFilesList('ERP-AIX', 'Errpt_More')     // Capital letters
 fetchFilesList('ERP-AIX', 'errpt-more')     // Hyphens instead of underscores
 fetchFilesList('ERP-AIX', 'errpt more')     // Spaces
 
-// ✅ CORRECT:
+// CORRECT:
 fetchFilesList('ERP-AIX', 'errpt_more')     // Lowercase, underscores
 fetchFilesList('ERP-AIX', 'errpt_a_more')   // Valid table name
 ```
@@ -475,12 +475,12 @@ Filename with spaces doesn't work
 
 **Solution:**
 ```javascript
-// ✅ CORRECT - Use encodeURIComponent()
+// CORRECT - Use encodeURIComponent()
 const fileName = 'errpt_more_Wed Jan 28 10:33:25 THAIST 2026.json';
 const encoded = encodeURIComponent(fileName);
 const url = `/get-file?app=ERP-AIX&file=${encoded}&type=json&table=errpt_more`;
 
-// ✅ ALSO CORRECT - Use URLSearchParams
+// ALSO CORRECT - Use URLSearchParams
 const params = new URLSearchParams({
   app: 'ERP-AIX',
   file: 'errpt_more_Wed Jan 28 10:33:25 THAIST 2026.json',
@@ -492,7 +492,7 @@ const url = `/get-file?${params.toString()}`;
 
 ---
 
-## 📊 API Response Times
+## API Response Times
 
 ### Typical Latencies
 
@@ -513,7 +513,7 @@ File selection (API call):              ~200-500ms
 
 ---
 
-## 🔒 API Security & Best Practices
+## API Security & Best Practices
 
 ### Rate Limiting (if applicable)
 
@@ -614,7 +614,7 @@ const getFileDataSafely = async (serverName, fileName, tableName) => {
 
 ---
 
-## 🧪 Testing API Endpoints
+## Testing API Endpoints
 
 ### Using curl (Terminal)
 
@@ -652,7 +652,7 @@ curl "http://n8n.local:5678/webhook/api/v1/get-file?app=ERP-AIX&file=errpt_more_
 
 ---
 
-## 📚 Related Files
+## Related Files
 
 - **Frontend Implementation:** [src/store/api.js](src/store/api.js)
 - **Cache Layer:** [src/store/apiCache.js](src/store/apiCache.js)
@@ -661,6 +661,6 @@ curl "http://n8n.local:5678/webhook/api/v1/get-file?app=ERP-AIX&file=errpt_more_
 
 ---
 
-**API Documentation Complete** ✅  
+**API Documentation Complete**  
 **Last Updated:** January 28, 2026  
 **Version:** 1.0

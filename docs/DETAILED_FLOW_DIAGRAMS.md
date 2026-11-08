@@ -1,10 +1,10 @@
-# 📊 Detailed System Flow Diagrams
+# Detailed System Flow Diagrams
 
 **Each page and data flow explained in depth**
 
 ---
 
-## 🏠 1. HOME VIEW - All Servers Overview
+## 1. HOME VIEW - All Servers Overview
 
 ### Entry Flow Diagram
 
@@ -181,7 +181,7 @@ T=3.0s | Page is fully interactive
 
 ---
 
-## 👁️ 2. INDIVIDUAL SERVER VIEW - ERP-AIX Example
+## 2. INDIVIDUAL SERVER VIEW - ERP-AIX Example
 
 ### Entry Flow Diagram
 
@@ -368,7 +368,7 @@ T=2.0s | User can switch files immediately
 
 ---
 
-## 🎯 3. ERROR REPORT (ERRPT) DETAILED FLOW
+## 3. ERROR REPORT (ERRPT) DETAILED FLOW
 
 ### Error Data Processing Pipeline
 
@@ -561,13 +561,13 @@ T=2.0s | User can switch files immediately
 ┌─────────────┬──────┬───────┬──────────┬─────────────────────────┬─────────────────┐
 │ Identifier  │ Type │ Class │ Resource │ Description             │ Timestamp       │
 ├─────────────┼──────┼───────┼──────────┼─────────────────────────┼─────────────────┤
-│ 4865FA9B    │ 🔴   │ 🔴    │ rmt0     │ TAPE OPERATION ERROR    │ Jan 28 01:32    │
+│ 4865FA9B    │ R    │ R     │ rmt0     │ TAPE OPERATION ERROR    │ Jan 28 01:32    │
 │  (hex code) │ Pred │  HW   │ (tape)   │                         │                 │
 ├─────────────┼──────┼───────┼──────────┼─────────────────────────┼─────────────────┤
-│ C69F5C9B    │ 🔴   │ 🟠    │ SYSPROC  │ SOFTWARE PROGRAM...     │ Jan 19 10:01    │
+│ C69F5C9B    │ R    │ O     │ SYSPROC  │ SOFTWARE PROGRAM...     │ Jan 19 10:01    │
 │             │ Pred │  SW   │ (system) │ ABNORMALLY TERMINATED   │                 │
 ├─────────────┼──────┼───────┼──────────┼─────────────────────────┼─────────────────┤
-│ 3074FEB7    │ 🟠   │ 🔴    │ fscsi0   │ ADAPTER ERROR           │ Dec 16 18:21    │
+│ 3074FEB7    │ O    │ R     │ fscsi0   │ ADAPTER ERROR           │ Dec 16 18:21    │
 │             │ Temp │  HW   │ (adapter)│                         │                 │
 ├─────────────┼──────┼───────┼──────────┼─────────────────────────┼─────────────────┤
 │ ...         │ ...  │ ...   │ ...      │ ...                     │ ...             │
@@ -575,13 +575,13 @@ T=2.0s | User can switch files immediately
 
 Legend:
 Type Badges:
-  🔴 Pred (Red)      = Predictive error (detected before failure)
-  🟠 Temp (Orange)   = Temporary error (may recover)
-  🔵 Info (Blue)     = Informational message
+  R  Pred (Red)      = Predictive error (detected before failure)
+  O  Temp (Orange)   = Temporary error (may recover)
+  B  Info (Blue)     = Informational message
 
 Class Badges:
-  🔴 HW (Red)        = Hardware error
-  🟠 SW (Orange)     = Software error
+  R  HW (Red)        = Hardware error
+  O  SW (Orange)     = Software error
 
 Features:
   - Click header to expand/collapse section
@@ -594,7 +594,7 @@ Features:
 
 ---
 
-## 🔀 4. FILE SELECTION FLOW
+## 4. FILE SELECTION FLOW
 
 ### When User Selects Different File
 
@@ -720,7 +720,7 @@ User experiences:
 
 ---
 
-## 📱 5. THEME SWITCHING FLOW
+## 5. THEME SWITCHING FLOW
 
 ### When User Toggles Dark/Light Mode
 
@@ -766,7 +766,7 @@ User experiences:
 
 ---
 
-**Documentation Complete** ✅  
+**Documentation Complete**  
 **Total Pages Documented:** 5  
 **Total Flows Explained:** 12+  
 **Code Accuracy:** High  

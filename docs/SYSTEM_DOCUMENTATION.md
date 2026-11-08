@@ -1,4 +1,4 @@
-# 📚 Daily Monitor System Architecture Documentation
+# Daily Monitor System Architecture Documentation
 
 **Last Updated:** January 28, 2026  
 **System Version:** 1.0  
@@ -6,7 +6,7 @@
 
 ---
 
-## 🏗️ System Architecture Overview
+## System Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -71,7 +71,7 @@
 
 ---
 
-## 📡 API Communication Layer
+## API Communication Layer
 
 ### Endpoint 1: List Files
 **Purpose:** Get list of available JSON files for a specific server and monitoring type
@@ -129,7 +129,7 @@ Response: JSON object with complete data structure (see below)
 
 ---
 
-## 🔄 Data Flow: Home View (All Servers Overview)
+## Data Flow: Home View (All Servers Overview)
 
 ### 1. HomeView Component Lifecycle
 
@@ -226,7 +226,7 @@ Benefits:
 
 ---
 
-## 👁️ Data Flow: Individual Server View
+## Data Flow: Individual Server View
 
 ### 1. Server Selection & Route Change
 
@@ -347,7 +347,7 @@ App.jsx (Routes)
 
 ---
 
-## 📊 Error Report Data Structure (Errpt)
+## Error Report Data Structure (Errpt)
 
 ### Raw Data from Backend
 
@@ -457,7 +457,7 @@ const extractErrorSummary = (parsedData) => {
 
 ---
 
-## 🔗 Component Connection Map
+## Component Connection Map
 
 ### State Management (ServerModel)
 
@@ -572,7 +572,7 @@ function App() {
 
 ---
 
-## 🎨 Theme & Styling
+## Theme & Styling
 
 ### Color System (useThemeColors)
 
@@ -617,7 +617,7 @@ colors = {
 
 ---
 
-## 📈 Performance Optimizations
+## Performance Optimizations
 
 ### 1. API Caching
 
@@ -660,7 +660,7 @@ export const ErrptMoreView = memo((props) => {
 
 ---
 
-## 🧪 Testing Scenarios
+## Testing Scenarios
 
 ### Scenario 1: Fresh Application Load
 
@@ -730,7 +730,7 @@ export const ErrptMoreView = memo((props) => {
 
 ---
 
-## 🐛 Debugging Tips
+## Debugging Tips
 
 ### Console Logging Points
 
@@ -783,7 +783,7 @@ apiCache.cache = {}
 
 ---
 
-## 📋 File Structure Summary
+## File Structure Summary
 
 ```
 src/
@@ -826,7 +826,7 @@ src/
 
 ---
 
-## 🚀 Key Takeaways
+## Key Takeaways
 
 1. **Backend returns objects, not strings** - error_list contains `[{object}, {object}, ...]`, not `["string", "string", ...]`
 
@@ -843,4 +843,4 @@ src/
 ---
 
 **Generated:** January 28, 2026  
-**System Status:** Production Ready ✅
+**System Status:** Production Ready
